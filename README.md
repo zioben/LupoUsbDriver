@@ -1,8 +1,8 @@
 # LupoUsbDriver
 Amiga USB Driver Library
 
-This is one of my first Projects.
-I resumed it days ago and uploaded it on GitHub, to share the code to everyone.
+This is one of my first Projects, which started in the early 2000s.
+I resumed it days ago and uploaded it on GitHub, to share the code with everyone.
 
 It attempts to create a USB driver stack for handling base devices like a USB mouse or joypad.
 Due to my lack of experience then, the driver was incomplete, but the stack was tested and worked with a generic USB mouse and a Gravis gamepad.
