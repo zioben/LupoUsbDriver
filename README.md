@@ -1,4 +1,4 @@
-#Amiga LupoUsbDriver
+#LupoUsbDriver
 Amiga USB Driver Library
 
 This is one of my first Projects, which started in the early 2000s.
