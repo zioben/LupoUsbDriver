@@ -1,0 +1,125 @@
+Storm Shell Project (0013)
+Settings (Start)
+C/C++ Environment
+"StormC:include"
+"Compiler:"
+Includepath (End)
+0 "" 80
+1 "objects"
+C/C++ Preprozessor
+1 "NDEBUG" ""
+Defines (End)
+1 1 1
+C/C++ Options
+0 1 1 2 0 0 0 0 0 1 0 3 1 0 0
+C/C++ Optimizer
+9
+C/C++ Warnings
+1 1 1 1 1 1 0 1
+Assembler
+0 ""
+0 "CON://640/200/Storm Assembler/AUTO/WAIT/SCREEN StormScreen"
+0 0
+0 1 60 0 1 0 0 20 0
+Sets (End)
+0 1 0 0 0 2 1 0 0
+1 1 1 1 0 0 0 0 0
+1 0
+0 0 0 0 0
+Linker
+2 0 "PROGDIR:startup.o" 0 0 1 0 2 0 0
+"StormC:lib/" 0 "StormC:lib/logfile" 0 1 1
+0 "_WizardSurface"
+0 1 50 1 50 0 50 0 0
+0 0 0 0 0 0 0 0
+Run
+30 "" "" "" 0
+""
+
+1 "CON://400/180/Storm Console/AUTO/WAIT/SCREEN StormScreen" "RAM:Output" "RAM:Input"
+0 0
+0 0 0 "" ""
+Settings (End)
+File
+1 "LupoUsbLibrary.c"
+"LupoUsbLibrary.c"
+"Compiler:Usb/HcDriverstructs.h"
+Storm Shell Project (Dependencies)
+"objects/LupoUsbLibrary.o" "objects/LupoUsbLibrary.debug"
+""
+"objects/LupoUsbLibrary.o" "objects/LupoUsbLibrary.debug"
+Section
+1 1 100
+File
+2 "Compiler:Usb/Protos/LupoUsbLibrary_protos.h"
+"Compiler:Usb/Protos/LupoUsbLibrary_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usb/protos/LupoUsbLibrary_protos_registers.h"
+"Compiler:Usb/protos/LupoUsbLibrary_protos_registers.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "DefaultControlEndpoint.h"
+"DefaultControlEndpoint.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "HcDriverstructs.h"
+"HcDriverstructs.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usb/Protos/LupoUsbLibrary_protos_reg.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+Section
+2 1 95
+File
+12 "LupoUsbLibraryAsm.Asm"
+"LupoUsbLibraryAsm.Asm"
+Storm Shell Project (Dependencies)
+"objects/LupoUsbLibraryAsm.o" ""
+""
+"objects/LupoUsbLibraryAsm.o"
+Section
+12 1 90
+File
+16 "LupoUsbLibrary.fd"
+"LupoUsbLibrary.fd"
+Storm Shell Project (Dependencies)
+"" ""
+""
+Section
+16 1 75
+File
+10 "Libs:lupousb.library"
+"LupoUsbLibrary.library"
+"Libs:lupousb.library"
+Storm Shell Project (Dependencies)
+"" ""
+""
+"Libs:lupousb.library.link"
+Section
+10 1 40
+File
+5 "storm.lib"
+"storm.lib"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+5 "amiga.lib"
+"amiga.lib"
+Storm Shell Project (Dependencies)
+"" ""
+""
+Section
+5 1 -50
+Storm Shell Project (End)

@@ -1,0 +1,8 @@
+"Compiler:Stormc/StormSYS/startups/library_startup.o"
+0,0,0,80,code_68k
+1,1,0,8,data
+"Compiler:Usb/objects/LupoUsbLibrary.o"
+0,0,80,2520,code_68k
+1,2,0,8,bss
+"Compiler:Usb/objects/LupoUsbLibraryAsm.o"
+0,0,2600,100,code_68k

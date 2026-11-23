@@ -1,0 +1,324 @@
+No Global M68K Construktors
+No Global M68K Destruktors
+No Global PPC Construktors
+No Global PPC Destruktors
+
+M68K Code
+
+
+  Hunk #0 ( Far Public ) 3140 Bytes (0xc44)
+  _ConvertWord = 80 (0x50) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _ConvertLong = 88 (0x58) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _SwapWord = 96 (0x60) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _SwapLong = 104 (0x68) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _SendUsbRequest = 112 (0x70) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  __THISSHAREDLIBRARYBASESIZE = 114 (0x72) referenced 2 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _GetUsbError = 120 (0x78) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _Get32BitFrameNumber = 126 (0x7e) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _GetUsbBaseAddress = 152 (0x98) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _KillHost = 194 (0xc2) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _StartHost = 280 (0x118) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+  _StopHost = 366 (0x16e) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+  _PauseHost = 452 (0x1c4) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+  _SetUsbState = 538 (0x21a) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+  _GetUsbState = 640 (0x280) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+102 Width 32 Bits
+  _AllocUsbMem = 744 (0x2e8) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+14 Width 32 Bits
+        at @+30 Width 32 Bits
+        at @+108 Width 32 Bits
+  _FreeUsbMem = 854 (0x356) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+14 Width 32 Bits
+        at @+30 Width 32 Bits
+  _AllocUsbRequester = 946 (0x3b2) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+        at @+96 Width 32 Bits
+  _InitUsbRequester = 1056 (0x420) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+18 Width 32 Bits
+        at @+54 Width 32 Bits
+  _FreeUsbRequester = 1198 (0x4ae) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+2 Width 32 Bits
+        at @+18 Width 32 Bits
+  _AllocEndpoint = 1224 (0x4c8) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+8 Width 32 Bits
+        at @+66 Width 32 Bits
+        at @+178 Width 32 Bits
+  _FreeEndpoint = 1404 (0x57c) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+14 Width 32 Bits
+        at @+30 Width 32 Bits
+  _GetEndpointData = 1502 (0x5de) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+  _SetEndpointData = 1600 (0x640) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+  _OpenPipe = 1698 (0x6a2) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+        at @+116 Width 32 Bits
+  _ClosePipe = 1822 (0x71e) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+8 Width 32 Bits
+        at @+24 Width 32 Bits
+  _AllocUsbdRequest = 1920 (0x780) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+        at @+106 Width 32 Bits
+  _FreeUsbdRequest = 2028 (0x7ec) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+14 Width 32 Bits
+        at @+30 Width 32 Bits
+  _AbortUsbdRequest = 2126 (0x84e) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+        at @+32 Width 32 Bits
+        at @+48 Width 32 Bits
+  _FreeUsbdRequestBuffer = 2224 (0x8b0) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+  _AllocUsbdRequestBuffer = 2256 (0x8d0) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+16 Width 32 Bits
+  _SetupUsbdRequest = 2330 (0x91a) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _SendUsbdRequest = 2468 (0x9a4) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+    IMPORTS
+      _SysBase type Data
+        at @+116 Width 32 Bits
+        at @+132 Width 32 Bits
+        at @+148 Width 32 Bits
+  _UConvertWord = 2600 (0xa28) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibraryAsm.o
+  _UConvertLong = 2604 (0xa2c) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibraryAsm.o
+  _USwapLong = 2612 (0xa34) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibraryAsm.o
+  _USwapWord = 2616 (0xa38) unused, maybe local
+    File Compiler:Usb/objects/LupoUsbLibraryAsm.o
+  _USendUsbRequest = 2620 (0xa3c) referenced 1 times
+    File Compiler:Usb/objects/LupoUsbLibraryAsm.o
+  _LibInit = 2700 (0xa8c) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+2708 Width 32 Bits
+        at @+2780 Width 32 Bits
+  _LibOpen = 2796 (0xaec) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+  ___LibOpen = 2824 (0xb08) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+  _LibClose = 2828 (0xb0c) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+  ___LibClose = 2864 (0xb30) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+  _LibExpunge = 2868 (0xb34) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+2906 Width 32 Bits
+        at @+2944 Width 32 Bits
+  _LibNull = 2964 (0xb94) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+  _InitModules = 3004 (0xbbc) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+    IMPORTS
+      ___init_table68k type Data
+        at @+3036 Width 32 Bits
+        at @+3048 Width 32 Bits
+  _CleanupModules = 3076 (0xc04) referenced 2 times
+    File Compiler:Stormc/StormSYS/lib/stormclibstartup020.lib
+    IMPORTS
+      ___exit_table68k type Data
+        at @+3100 Width 32 Bits
+        at @+3112 Width 32 Bits
+
+PowerPC Code
+
+
+Data
+
+
+  Hunk #1 ( Merged Public ) 272 Bytes (0x110)
+  _SysBase = 0 (0x0) referenced 3 times
+    File Compiler:Stormc/StormSYS/startups/library_startup.o
+  ___init_table68k = 32 (0x20) referenced 2 times
+    File <Internal Assembled>
+  ___exit_table68k = 40 (0x28) referenced 1 times
+    File <Internal Assembled>
+  __LIBRARYJUMPTABLE = 48 (0x30) referenced 1 times
+    File <Internal Assembled>
+    IMPORTS
+      _FreeEndpoint type M68k Code
+        at @+144 Width 32 Bits
+      _AllocEndpoint type M68k Code
+        at @+140 Width 32 Bits
+      _FreeUsbRequester type M68k Code
+        at @+136 Width 32 Bits
+      _InitUsbRequester type M68k Code
+        at @+132 Width 32 Bits
+      _AllocUsbRequester type M68k Code
+        at @+128 Width 32 Bits
+      _FreeUsbMem type M68k Code
+        at @+124 Width 32 Bits
+      _AllocUsbMem type M68k Code
+        at @+120 Width 32 Bits
+      _GetUsbState type M68k Code
+        at @+116 Width 32 Bits
+      _SetUsbState type M68k Code
+        at @+112 Width 32 Bits
+      _PauseHost type M68k Code
+        at @+108 Width 32 Bits
+      _StopHost type M68k Code
+        at @+104 Width 32 Bits
+      _StartHost type M68k Code
+        at @+100 Width 32 Bits
+      _KillHost type M68k Code
+        at @+96 Width 32 Bits
+      _GetUsbBaseAddress type M68k Code
+        at @+92 Width 32 Bits
+      _Get32BitFrameNumber type M68k Code
+        at @+88 Width 32 Bits
+      _GetUsbError type M68k Code
+        at @+84 Width 32 Bits
+      _SendUsbRequest type M68k Code
+        at @+80 Width 32 Bits
+      _SwapLong type M68k Code
+        at @+76 Width 32 Bits
+      _SwapWord type M68k Code
+        at @+72 Width 32 Bits
+      _ConvertLong type M68k Code
+        at @+68 Width 32 Bits
+      _ConvertWord type M68k Code
+        at @+64 Width 32 Bits
+      _LibNull type M68k Code
+        at @+60 Width 32 Bits
+      _LibOpen type M68k Code
+        at @+48 Width 32 Bits
+      _LibClose type M68k Code
+        at @+52 Width 32 Bits
+      _LibExpunge type M68k Code
+        at @+56 Width 32 Bits
+  _LibNameString = 196 (0xc4) referenced 1 times
+    File <Internal Assembled>
+    IMPORTS
+      _FreeUsbdRequest type M68k Code
+        at @+20 Width 32 Bits
+      _AllocUsbdRequest type M68k Code
+        at @+16 Width 32 Bits
+      _ClosePipe type M68k Code
+        at @+12 Width 32 Bits
+      _OpenPipe type M68k Code
+        at @+8 Width 32 Bits
+      _SetEndpointData type M68k Code
+        at @+4 Width 32 Bits
+  _LibVersionString = 220 (0xdc) referenced 1 times
+    File <Internal Assembled>
+    IMPORTS
+      _SendUsbdRequest type M68k Code
+        at @+16 Width 32 Bits
+      _SetupUsbdRequest type M68k Code
+        at @+12 Width 32 Bits
+      _AllocUsbdRequestBuffer type M68k Code
+        at @+8 Width 32 Bits
+      _FreeUsbdRequestBuffer type M68k Code
+        at @+4 Width 32 Bits
+
+BSS
+
+
+  Hunk #2 ( Far Public ) 8 Bytes (0x8)
+  _KernelPort = 0 (0x0) unused, maybe local
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+  _StackPort = 4 (0x4) unused, maybe local
+    File Compiler:Usb/objects/LupoUsbLibrary.o
+
+END

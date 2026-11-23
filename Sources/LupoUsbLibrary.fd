@@ -1,0 +1,107 @@
+##base _UsbLibrary
+##bias 30
+*
+*---------------------------------
+*=====  General  utility  ========
+*---------------------------------
+##public
+ConvertWord(DataWord)(d0)
+ConvertLong(DataLong)(d0)
+SwapWord(DataWord)(d0)
+SwapLong(DataLong)(d0)
+SendUsbRequest(Support,MessagePort)(a0,a1)
+GetUsbError(Support)(a0)
+*---------------------------------
+*=====  RootHub  utility  ========
+*---------------------------------
+SetupRootHubMessagePort(Support,MessagePort)(a0,a1)
+FreeRootHubMessagePort(Support,MessagePort)(a0,a1)
+*---------------------------------
+*=====  HostCon  utility  ========
+*---------------------------------
+Get32BitFrameNumber(Support)(a0)
+GetUsbBaseAddress(Support)(a0)
+KillHost(Support)(a0)
+StartHost(Support)(a0)
+StopHost(Support)(a0)
+PauseHost(Support)(a0)
+SetUsbState(Support,OperationalState)(a0,d0)
+GetUsbState(Support)(a0)
+*---------------------------------
+*=====  Memory   utility  ========
+*---------------------------------
+AllocUsbMem(Support,BufferLeng)(a0,d0)
+FreeUsbMem(Support,MemAddress)(a0,a1)
+*---------------------------------
+*=====  Support  utility  ========
+*---------------------------------
+AllocUsbSupport()()
+InitUsbSupport(Support)(a0)
+FreeUsbSupport(Support)(a0)
+*---------------------------------
+*=====  Endpoint utility  ========
+*---------------------------------
+AllocEndpoint(Support,EndpointType,EndpointRate,Control)(a0,d0,d1,a1)
+FreeEndpoint(req,Endpoint)(a0,a1)
+GetEndpointData(req,Endpoint)(a0,a1)
+SetEndpointData(req,Endpoint)(a0,a1)
+OpenPipe(req,Endpoint)(a0,a1)
+ClosePipe(req,Endpoint)(a0,a1)
+*---------------------------------
+*=====  UsbHandler utility  ======
+*---------------------------------
+AllocUsbdRequest(req,BufferLeng)(a0,d0)
+FreeUsbdRequest(req,usb)(a0,a1)
+AbortUsbdRequest(req,usb)(a0,a1)
+FreeUsbdRequestBuffer(req,usb)(a0,a1)
+AllocUsbdRequestBuffer(req,usb,BufferLength)(a0,a1,d0)
+*---------------------------------
+*=====    Usb   Requests    ======
+*---------------------------------
+SetupUsbdRequest(usb,bRequestType,bRequest,wValue,wIndex,wLength)(a0,d0,d1,d2,d3,d4)
+SendUsbdRequest(req,ed,usb)(a0,a1,a2)
+WaitUsbdRequest(Support,usb)(a0,a1)
+SendSyncUsbdRequest(Req,ed,usb)(a0,a1,a2)
+SendUsbData(Req,ed,usb)(a0,a1,a2)
+ReceiveUsbData(Req,ed,usb)(a0,a1,a2)
+*---------------------------------
+*=====    Usb Bus Commands  ======
+*---------------------------------
+ClearFeature(req,ed,usb,Recipient,Feature,FeatutreNumber)(a0,a1,a2,d0,d1,d2)
+GetConfiguration(req,ed,usb)(a0,a1,a2)
+GetDescriptor(req,ed,usb,type,index,Leng,LangID)(a0,a1,a2,d0,d1,d2,d3)
+GetInterface(req,ed,usb,NInterface)(a0,a1,a2,d0)
+GetStatus(req,ed,usb,Recipient,NumInterface)(a0,a1,a2,d0,d1)
+SetAddress(req,ed,usb,Address)(a0,a1,a2,d0)
+SetConfiguration(req,ed,usb,Value)(a0,a1,a2,d0)
+SetDescriptor(req,ed,usb,Type,Index,Leng,LangID)(a0,a1,a2,d0,d1,d2,d3)
+SetFeature(req,ed,usb,Recipient,Interface,Feature)(a0,a1,a2,d0,d1,d2)
+SetInterface(req,ed,usb,Interface,AltInterface)(a0,a1,a2,d0,d1)
+SynchFrame(req,ed,usb,Frame)(a0,a1,a2,d0)
+ClearDeviceFeature(req,ed,usb,Feature)(a0,a1,a2,d0)
+ClearEndpointFeature(req,ed,usb,Feature)(a0,a1,a2,d0)
+ClearInterfaceFeature(req,ed,usb,Feature,NumInterface)(a0,a1,a2,d0,d1)
+SetDeviceFeature(req,ed,usb,Feature)(a0,a1,a2,d0)
+SetEndpointFeature(req,ed,usb,Feature)(a0,a1,a2,d0)
+SetInterfaceFeature(req,ed,usb,Feature,NumInterface)(a0,a1,a2,d0)
+GetDeviceDescriptor(req,ed,usb)(a0,a1,a2)
+FreeDeviceDescriptor(DeviceDescriptor)(a0)
+GetConfigurationDescriptor(req,ed,usb,ConfValue)(a0,a1,a2,d0)
+FreeConfigurationDescriptor(ConfigurationDescriptor)(a0)
+*GetInterfaceDescriptor(req,ed,usb,IntValue)(a0,a1,a2,d0)
+*FreeInterfaceDescriptor(InterfaceDescriptor)(a0)
+*GetEndpointDescriptor(req,ed,usb,EndpointNumber)(a0,a1,a2,d0)
+*FreeEndpointDescriptor(EndpointDescriptor)(a0)
+GetConfigurationChunk(req,ed,usb,ConfigurationDescriptor)(a0,a1,a2,a3)
+GetString(req,ed,usb,StringID,dest)(a0,a1,a2,d0,a3)
+*---------------------------------
+*=====    Usb Bus Commands  ======
+*---------------------------------
+SendStackRequest(Support)(a0)
+LockFunction(Support,FunctionNumber)(a0,d0)
+UnLockFunction(Support,FunctionAddress)(a0,d0)
+UsbInitFunction(Support,DeviceSpeed)(a0,d0)
+UsbRemoveFunction(Support,FunctionAddress)(a0,d0)
+GetUsbDevice(Support,FunctionAddress)(a0,d0)
+*
+##end

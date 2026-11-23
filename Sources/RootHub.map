@@ -1,0 +1,683 @@
+Global M68K Construktors
+	_INIT_0_InitFiles
+	_INIT_1_DOS_c__DOSBase
+	_INIT_2_Intuition_c__IntuitionBase
+	_INIT_5_InitStdIOFiles
+	_INIT_8_RootHub_c
+Global M68K Destruktors
+	_EXIT_5_InitFiles
+	_EXIT_5_InitStdIOFiles
+	_EXIT_4_free
+	_EXIT_2_Intuition_c__IntuitionBase
+	_EXIT_1_DOS_c__DOSBase
+	_EXIT_0_Main
+No Global PPC Construktors
+No Global PPC Destruktors
+
+M68K Code
+
+
+  Hunk #0 ( Far Public ) 15868 Bytes (0x3dfc)
+  _exit = 132 (0x84) referenced 2 times
+    File Compiler:Stormc/StormSYS/startups/startup.o
+  _INIT_8_RootHub_c = 180 (0xb4) unused, maybe local
+    File Compiler:Usb/objects/RootHub.o
+  _ProcessHubStatusRegister = 224 (0xe0) unused, maybe local
+    File Compiler:Usb/objects/RootHub.o
+  _ProcessPort = 226 (0xe2) unused, maybe local
+    File Compiler:Usb/objects/RootHub.o
+  _ProcessHub = 482 (0x1e2) unused, maybe local
+    File Compiler:Usb/objects/RootHub.o
+  _main = 706 (0x2c2) referenced 2 times
+    File Compiler:Usb/objects/RootHub.o
+  _ClearHubFeature = 1344 (0x540) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _ClearPortFeature = 1388 (0x56c) referenced 1 times
+    File Compiler:Usb/objects/RootHubClass.o
+  _GetBusState = 1552 (0x610) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _GetHubDescriptor = 1556 (0x614) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _FreeHubDescriptor = 1688 (0x698) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _GetHubStatus = 1690 (0x69a) referenced 1 times
+    File Compiler:Usb/objects/RootHubClass.o
+  _GetPortStatus = 1712 (0x6b0) referenced 1 times
+    File Compiler:Usb/objects/RootHubClass.o
+  _SetHubDescriptor = 1752 (0x6d8) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _SetHubFeature = 1756 (0x6dc) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _SetPortFeature = 1760 (0x6e0) referenced 1 times
+    File Compiler:Usb/objects/RootHubClass.o
+  _WaitCSC = 1832 (0x728) referenced 1 times
+    File Compiler:Usb/objects/RootHubClass.o
+  _ConvertAddress = 1970 (0x7b2) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _ConvertWord = 1978 (0x7ba) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetRevision = 1982 (0x7be) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetState = 1998 (0x7ce) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetState = 2034 (0x7f2) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcListEnable = 2058 (0x80a) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcListDisable = 2080 (0x820) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetCBSR = 2104 (0x838) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcInterruptRoutingEnable = 2134 (0x856) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcInterruptRoutingDisable = 2152 (0x868) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRemoteWakeupEnable = 2170 (0x87a) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRemoteWakeupDisable = 2188 (0x88c) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRemoteWakeupConnected = 2206 (0x89e) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSoftReset = 2240 (0x8c0) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcChangeRequest = 2258 (0x8d2) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetBulkListFilled = 2276 (0x8e4) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetControlListFilled = 2294 (0x8f6) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetSchedulingOverrun = 2312 (0x908) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcInterruptEnable = 2332 (0x91c) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcInterruptSetSF = 2358 (0x936) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcInterruptClearSF = 2378 (0x94a) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcInterruptSet = 2398 (0x95e) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcInterruptClear = 2418 (0x972) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcInterruptDisable = 2438 (0x986) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetHCCA = 2464 (0x9a0) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetPeriodCurrentED = 2484 (0x9b4) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetControlHeadED = 2504 (0x9c8) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetControlHeadED = 2524 (0x9dc) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetControlCurrentED = 2544 (0x9f0) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetControlCurrentED = 2564 (0xa04) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetBulkHeadED = 2584 (0xa18) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetBulkHeadED = 2604 (0xa2c) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetBulkCurrentED = 2624 (0xa40) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetBulkCurrentED = 2644 (0xa54) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetDoneHeadED = 2664 (0xa68) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetFrameInterval = 2720 (0xaa0) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetFrameInterval = 2742 (0xab6) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetFSMPS = 2778 (0xada) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetFrameNumber = 2806 (0xaf6) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetPeriodicStart = 2826 (0xb0a) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcGetPeriodicStart = 2854 (0xb26) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcSetThreShold = 2876 (0xb3c) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhGetNumberDownstreamPorts = 2900 (0xb54) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhGetPOTPGT = 2918 (0xb66) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhGetPowerSwitchingMode = 2936 (0xb78) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhGetOvercurrentProtectionMode = 2974 (0xb9e) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhIsDeviceRemovable = 3012 (0xbc4) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhIsDevicePowered = 3052 (0xbec) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhClearGlobalPower = 3080 (0xc08) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhSetRemoteWakeup = 3098 (0xc1a) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhSetGlobalPower = 3116 (0xc2c) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhClearRemoteWakeup = 3134 (0xc3e) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhGetGlobalOvercurrent = 3152 (0xc50) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhGetOvercurrentIndicatorChange = 3174 (0xc66) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhClearOvercurrentIndicatorChange = 3196 (0xc7c) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetCurrentConnectStatus = 3214 (0xc8e) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortEnableStatus = 3244 (0xcac) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortSuspendStatus = 3274 (0xcca) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortOvercurrentIndicator = 3304 (0xce8) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortResetStatus = 3334 (0xd06) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_ClearPortEnable = 3364 (0xd24) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_SetPortEnable = 3390 (0xd3e) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_SetPortSuspend = 3416 (0xd58) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_ClearSuspendStatus = 3442 (0xd72) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_SetPortReset = 3468 (0xd8c) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortPowerStatus = 3494 (0xda6) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_LowSpeedDeviceAttached = 3524 (0xdc4) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_SetPortPower = 3554 (0xde2) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_ClearPortPower = 3580 (0xdfc) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetConnectStatusChange = 3606 (0xe16) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_ClearConnectStatusChange = 3636 (0xe34) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortEnablestatusChange = 3662 (0xe4e) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_ClearPortEnableStatusChange = 3692 (0xe6c) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortSuspendStatusChange = 3718 (0xe86) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_ClearPortSuspendSatatusChange = 3748 (0xea4) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortOvercurrentIndicatorChange = 3774 (0xebe) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_ClearPortOvercurrentIndicatorChange = 3804 (0xedc) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_GetPortResetStatusChange = 3830 (0xef6) unused, maybe local
+    File Compiler:Usb/objects/Asmhc.o
+  _HcRhPort_ClearPortResetstatusChange = 3860 (0xf14) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _ConvertLong = 1970 (0x7b2) referenced 1 times
+    File Compiler:Usb/objects/Asmhc.o
+  _fflush = 3888 (0xf30) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _setvbuf = 3972 (0xf84) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _amigaread = 4192 (0x1060) referenced 6 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _DOSBase type Data
+        at @+4252 Width 32 Bits
+        at @+4502 Width 32 Bits
+        at @+4592 Width 32 Bits
+  _amigareadunget = 4660 (0x1234) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _amigagetc type M68k Code
+        at @+4692 Width 32 Bits
+      _amigaread type M68k Code
+        at @+4684 Width 32 Bits
+  _amigawrite = 4760 (0x1298) referenced 4 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _DOSBase type Data
+        at @+4836 Width 32 Bits
+        at @+4856 Width 32 Bits
+        at @+5004 Width 32 Bits
+        at @+5050 Width 32 Bits
+        at @+5198 Width 32 Bits
+        at @+5226 Width 32 Bits
+        at @+5286 Width 32 Bits
+  _amigaeof = 5312 (0x14c0) referenced 3 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _amigaseek = 5336 (0x14d8) referenced 3 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _DOSBase type Data
+        at @+5396 Width 32 Bits
+        at @+5424 Width 32 Bits
+        at @+5574 Width 32 Bits
+        at @+5602 Width 32 Bits
+  _amigagetc = 5624 (0x15f8) referenced 5 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _amigagetcunget = 5680 (0x1630) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _amigagetc type M68k Code
+        at @+5698 Width 32 Bits
+      _amigaread type M68k Code
+        at @+5690 Width 32 Bits
+  _amigaungetc = 5712 (0x1650) referenced 3 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _amigareadunget type M68k Code
+        at @+5726 Width 32 Bits
+      _amigagetcunget type M68k Code
+        at @+5734 Width 32 Bits
+  _amigaputc = 5744 (0x1670) referenced 3 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _amigaflush = 5804 (0x16ac) referenced 8 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _DOSBase type Data
+        at @+5860 Width 32 Bits
+        at @+5906 Width 32 Bits
+        at @+5924 Width 32 Bits
+        at @+5984 Width 32 Bits
+  _amigaclose = 6036 (0x1794) referenced 3 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _DOSBase type Data
+        at @+6084 Width 32 Bits
+        at @+6110 Width 32 Bits
+        at @+6136 Width 32 Bits
+  _INIT_0_InitFiles = 6160 (0x1810) unused, maybe local
+    File Compiler:Stormc/Lib/storm020.lib
+  _EXIT_5_InitFiles = 6232 (0x1858) unused, maybe local
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+6258 Width 32 Bits
+        at @+6294 Width 32 Bits
+  _memcpy = 6320 (0x18b0) referenced 2 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _malloc = 6392 (0x18f8) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+6428 Width 32 Bits
+        at @+6532 Width 32 Bits
+        at @+6594 Width 32 Bits
+        at @+6636 Width 32 Bits
+        at @+6658 Width 32 Bits
+        at @+6722 Width 32 Bits
+        at @+6734 Width 32 Bits
+  _free = 6812 (0x1a9c) referenced 2 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+6858 Width 32 Bits
+        at @+6894 Width 32 Bits
+        at @+6908 Width 32 Bits
+        at @+6924 Width 32 Bits
+        at @+6962 Width 32 Bits
+  _EXIT_4_free = 7008 (0x1b60) unused, maybe local
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+7050 Width 32 Bits
+        at @+7064 Width 32 Bits
+        at @+7084 Width 32 Bits
+        at @+7110 Width 32 Bits
+  _formatted_out = 7604 (0x1db4) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _printf = 9544 (0x2548) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _std__out type Data
+        at @+9558 Width 32 Bits
+  _INIT_5_InitStdIOFiles = 9596 (0x257c) unused, maybe local
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _std__err type Data
+        at @+9782 Width 32 Bits
+        at @+9788 Width 32 Bits
+        at @+9808 Width 32 Bits
+        at @+9824 Width 32 Bits
+        at @+9842 Width 32 Bits
+      _DOSBase type Data
+        at @+9600 Width 32 Bits
+        at @+9622 Width 32 Bits
+        at @+9686 Width 32 Bits
+        at @+9708 Width 32 Bits
+        at @+9772 Width 32 Bits
+        at @+9794 Width 32 Bits
+      _std__out type Data
+        at @+9610 Width 32 Bits
+        at @+9616 Width 32 Bits
+        at @+9636 Width 32 Bits
+        at @+9652 Width 32 Bits
+        at @+9670 Width 32 Bits
+      _std__in type Data
+        at @+9696 Width 32 Bits
+        at @+9702 Width 32 Bits
+        at @+9722 Width 32 Bits
+        at @+9738 Width 32 Bits
+        at @+9756 Width 32 Bits
+  _EXIT_5_InitStdIOFiles = 9862 (0x2686) unused, maybe local
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _std__err type Data
+        at @+9890 Width 32 Bits
+      _std__out type Data
+        at @+9862 Width 32 Bits
+      _std__in type Data
+        at @+9876 Width 32 Bits
+  _strlen = 9908 (0x26b4) referenced 4 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _signed_out = 9932 (0x26cc) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _signed_out_l = 10590 (0x295e) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _unsigned_out = 10680 (0x29b8) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _unsigned_out_l = 11276 (0x2c0c) referenced 2 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _char_out = 11796 (0x2e14) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _string_out = 11936 (0x2ea0) referenced 1 times
+    File Compiler:Stormc/Lib/storm020.lib
+  _Delay = 12128 (0x2f60) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _DOSBase type Data
+        at @+12132 Width 32 Bits
+  _AddPort = 12148 (0x2f74) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12152 Width 32 Bits
+  _AllocMem = 12168 (0x2f88) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12172 Width 32 Bits
+  _AllocSignal = 12192 (0x2fa0) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12196 Width 32 Bits
+  _CloseLibrary = 12212 (0x2fb4) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12216 Width 32 Bits
+  _FindPort = 12232 (0x2fc8) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12236 Width 32 Bits
+  _FindTask = 12252 (0x2fdc) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12256 Width 32 Bits
+  _FreeMem = 12272 (0x2ff0) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12276 Width 32 Bits
+  _FreeSignal = 12296 (0x3008) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12300 Width 32 Bits
+  _GetMsg = 12316 (0x301c) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12320 Width 32 Bits
+  _OpenLibrary = 12336 (0x3030) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12340 Width 32 Bits
+  _RemPort = 12360 (0x3048) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12364 Width 32 Bits
+  _WaitPort = 12380 (0x305c) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+    IMPORTS
+      _SysBase type Data
+        at @+12384 Width 32 Bits
+  _NewList = 12400 (0x3070) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+  _CreatePort = 12420 (0x3084) unused, maybe local
+    File Compiler:Stormc/Lib/amiga.lib
+  _DeletePort = 12556 (0x310c) referenced 1 times
+    File Compiler:Stormc/Lib/amiga.lib
+  _floor__r = 12624 (0x3150) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/math060.lib
+  _frexp__r = 12648 (0x3168) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/math060.lib
+  _double_out = 13152 (0x3360) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/math060.lib
+  main() = 14312 (0x37e8) referenced 2 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      main(int,char *) type M68k Code
+        at @+14314 Width 32 Bits
+  main(int,char **) = 14320 (0x37f0) referenced 2 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      _main type M68k Code
+        at @+14322 Width 32 Bits
+  wbmain(WBStartup *) = 14328 (0x37f8) referenced 2 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      _wbmain type M68k Code
+        at @+14330 Width 32 Bits
+  _wbmain = 14336 (0x3800) referenced 2 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+  main(int,char *) = 14340 (0x3804) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+14370 Width 32 Bits
+      _DOSBase type Data
+        at @+14420 Width 32 Bits
+  _EXIT_0_Main = 14820 (0x39e4) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+14848 Width 32 Bits
+  _INIT_1_DOS_c__DOSBase = 14872 (0x3a18) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+  _EXIT_1_DOS_c__DOSBase = 14904 (0x3a38) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+  _InitModules = 14968 (0x3a78) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      ___init_table68k type Data
+        at @+14996 Width 32 Bits
+        at @+15008 Width 32 Bits
+  _CleanupModules = 15036 (0x3abc) referenced 2 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      ___exit_table68k type Data
+        at @+15054 Width 32 Bits
+        at @+15066 Width 32 Bits
+  _INIT_2_Intuition_c__IntuitionBase = 15092 (0x3af4) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+  _EXIT_2_Intuition_c__IntuitionBase = 15124 (0x3b14) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+  LibBaseC::LibBaseC(char *,unsigned long,short) = 15200 (0x3b60) referenced 2 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+15226 Width 32 Bits
+        at @+15276 Width 32 Bits
+        at @+15344 Width 32 Bits
+        at @+15386 Width 32 Bits
+        at @+15444 Width 32 Bits
+      _DOSBase type Data
+        at @+15250 Width 32 Bits
+        at @+15258 Width 32 Bits
+        at @+15320 Width 32 Bits
+        at @+15492 Width 32 Bits
+      _not_open__LibBaseC type Data
+        at @+15374 Width 32 Bits
+      _IntuitionBase type Data
+        at @+15406 Width 32 Bits
+        at @+15466 Width 32 Bits
+  LibBaseC::~LibBaseC() = 15656 (0x3d28) referenced 2 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+    IMPORTS
+      _SysBase type Data
+        at @+15674 Width 32 Bits
+  Neg64 = 15696 (0x3d50) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  ___neg64 = 15696 (0x3d50) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  SDiv64 = 15704 (0x3d58) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  UDiv64 = 15744 (0x3d80) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  ___uintdivmod64 = 15744 (0x3d80) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  ___intdivmod64 = 15704 (0x3d58) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  UMod64 = 15844 (0x3de4) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  ___uintmod64 = 15844 (0x3de4) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  SMod64 = 15856 (0x3df0) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+  ___intmod64 = 15856 (0x3df0) unused, maybe local
+    File Compiler:Stormc/StormSYS/lib/stormcsupport000.lib
+
+PowerPC Code
+
+
+Data
+
+
+  Hunk #1 ( Far Public ) 636 Bytes (0x27c)
+  _SysBase = 0 (0x0) referenced 20 times
+    File Compiler:Stormc/StormSYS/startups/startup.o
+  _UsbLibrary = 16 (0x10) unused, maybe local
+    File Compiler:Usb/objects/RootHub.o
+  _ReplyPort = 20 (0x14) unused, maybe local
+    File Compiler:Usb/objects/RootHub.o
+  _Req = 24 (0x18) unused, maybe local
+    File Compiler:Usb/objects/RootHub.o
+  _RHDevice = 32 (0x20) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _RHConfiguration = 52 (0x34) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _RHInterface = 64 (0x40) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _RHEndpoint = 76 (0x4c) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _RHub = 84 (0x54) unused, maybe local
+    File Compiler:Usb/objects/RootHubClass.o
+  _std__out = 96 (0x60) referenced 3 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _amigaclose type M68k Code
+        at @+176 Width 32 Bits
+      _amigagetc type M68k Code
+        at @+160 Width 32 Bits
+      _amigaread type M68k Code
+        at @+144 Width 32 Bits
+      _amigaseek type M68k Code
+        at @+156 Width 32 Bits
+      _amigawrite type M68k Code
+        at @+148 Width 32 Bits
+      _amigaflush type M68k Code
+        at @+172 Width 32 Bits
+      _amigaungetc type M68k Code
+        at @+164 Width 32 Bits
+      _amigaeof type M68k Code
+        at @+152 Width 32 Bits
+      _amigaputc type M68k Code
+        at @+168 Width 32 Bits
+  _std__in = 184 (0xb8) referenced 2 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _amigaclose type M68k Code
+        at @+264 Width 32 Bits
+      _amigagetc type M68k Code
+        at @+248 Width 32 Bits
+      _amigaread type M68k Code
+        at @+232 Width 32 Bits
+      _amigaseek type M68k Code
+        at @+244 Width 32 Bits
+      _amigawrite type M68k Code
+        at @+236 Width 32 Bits
+      _amigaflush type M68k Code
+        at @+260 Width 32 Bits
+      _amigaungetc type M68k Code
+        at @+252 Width 32 Bits
+      _amigaeof type M68k Code
+        at @+240 Width 32 Bits
+      _amigaputc type M68k Code
+        at @+256 Width 32 Bits
+  _std__err = 272 (0x110) referenced 2 times
+    File Compiler:Stormc/Lib/storm020.lib
+    IMPORTS
+      _amigaclose type M68k Code
+        at @+352 Width 32 Bits
+      _amigagetc type M68k Code
+        at @+336 Width 32 Bits
+      _amigaread type M68k Code
+        at @+320 Width 32 Bits
+      _amigaseek type M68k Code
+        at @+332 Width 32 Bits
+      _amigawrite type M68k Code
+        at @+324 Width 32 Bits
+      _amigaflush type M68k Code
+        at @+348 Width 32 Bits
+      _amigaungetc type M68k Code
+        at @+340 Width 32 Bits
+      _amigaeof type M68k Code
+        at @+328 Width 32 Bits
+      _amigaputc type M68k Code
+        at @+344 Width 32 Bits
+  _DOSBase = 552 (0x228) referenced 10 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+  _IntuitionBase = 564 (0x234) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+  _not_open__LibBaseC = 568 (0x238) referenced 1 times
+    File Compiler:Stormc/StormSYS/lib/stormcstartup020.lib
+  ___init_table68k = 576 (0x240) referenced 2 times
+    File <Internal Assembled>
+    IMPORTS
+      _INIT_8_RootHub_c type M68k Code
+        at @+596 Width 32 Bits
+      _INIT_5_InitStdIOFiles type M68k Code
+        at @+592 Width 32 Bits
+      _INIT_2_Intuition_c__IntuitionBase type M68k Code
+        at @+584 Width 32 Bits
+      _INIT_1_DOS_c__DOSBase type M68k Code
+        at @+580 Width 32 Bits
+      _INIT_0_InitFiles type M68k Code
+        at @+576 Width 32 Bits
+  ___exit_table68k = 608 (0x260) referenced 1 times
+    File <Internal Assembled>
+    IMPORTS
+      _EXIT_0_Main type M68k Code
+        at @+628 Width 32 Bits
+      _EXIT_1_DOS_c__DOSBase type M68k Code
+        at @+624 Width 32 Bits
+      _EXIT_2_Intuition_c__IntuitionBase type M68k Code
+        at @+620 Width 32 Bits
+      _EXIT_4_free type M68k Code
+        at @+616 Width 32 Bits
+      _EXIT_5_InitStdIOFiles type M68k Code
+        at @+612 Width 32 Bits
+      _EXIT_5_InitFiles type M68k Code
+        at @+608 Width 32 Bits
+
+BSS
+
+
+  Hunk #2 ( Far Public ) 560 Bytes (0x230)
+	Has no symbols but has 8 sections
+
+END

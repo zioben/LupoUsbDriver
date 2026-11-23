@@ -1,0 +1,9 @@
+"Compiler:Stormc/StormSYS/startups/startup.o"
+0,0,0,132,code_68k
+1,0,132,48,code_68k
+-
+3,1,0,16,data
+"Compiler:Usb/objects/UsbStack.o"
+0,0,180,876,code_68k
+1,1,16,40,data
+!0,528 ; _main
