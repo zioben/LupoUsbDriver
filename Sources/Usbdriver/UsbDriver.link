@@ -1,0 +1,27 @@
+"Compiler:Stormc/StormSYS/startups/startup.o"
+0,0,0,132,code_68k
+1,0,132,48,code_68k
+-
+3,1,0,12,data
+"Compiler:Usbdriver/objects/UsbDriver.o"
+0,0,180,1800,code_68k
+1,1,12,4,data
+2,2,0,100,bss
+"Compiler:Usbdriver/objects/List.o"
+0,0,1980,388,code_68k
+"Compiler:Usbdriver/objects/GfxMemory.o"
+0,0,2368,1336,code_68k
+1,1,16,32,data
+"Compiler:Usbdriver/objects/Hcdriver.o"
+0,0,3704,1612,code_68k
+"Compiler:Usbdriver/objects/Interrupt.o"
+0,0,5316,1304,code_68k
+1,1,48,24,data
+"Compiler:Usbdriver/objects/Endpoint.o"
+0,0,6620,5168,code_68k
+1,1,72,16,data
+"Compiler:Usbdriver/objects/AsmEndpoint.o"
+0,0,11796,572,code_68k
+"Compiler:Usbdriver/objects/Asmhc.o"
+0,0,12368,2036,code_68k
+!0,262 ; _main

@@ -1,0 +1,13 @@
+
+#ifndef DEBUGGER_PROTOS
+#define DEBUGGER_PROTOS
+
+void printfED(PENDPOINT_DESCRIPTOR ED);
+void printfEDList(PENDPOINT_DESCRIPTOR ED);
+void printfCC(PTRANSFER_DESCRIPTOR TD);
+void printfTD(PTRANSFER_DESCRIPTOR TD);
+void printfTDList(PTRANSFER_DESCRIPTOR TD);
+void printfHC(PHCD_DEVICE_DATA hc);
+void printfUSBD(PUSBD_REQUEST req);
+
+#endif

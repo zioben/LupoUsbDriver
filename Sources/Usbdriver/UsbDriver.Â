@@ -1,0 +1,268 @@
+Storm Shell Project (0013)
+Settings (Start)
+C/C++ Environment
+"StormC:include"
+"Compiler:"
+"Compiler:Usb/Usbdriver"
+Includepath (End)
+0 "" 80
+1 "objects"
+C/C++ Preprozessor
+1 "NDEBUG" ""
+Defines (End)
+1 1 1
+C/C++ Options
+0 0 0 2 0 0 0 0 0 1 0 4 0 0 0
+C/C++ Optimizer
+9
+C/C++ Warnings
+1 1 1 1 1 1 0 1
+Assembler
+0 ""
+0 "CON://640/200/Storm Assembler/AUTO/WAIT/SCREEN StormScreen"
+0 0
+0 1 60 0 1 0 0 20 0
+Sets (End)
+0 1 0 0 0 2 1 0 0
+1 1 1 1 0 0 0 0 0
+1 0
+0 0 0 0 0
+Linker
+0 0 "PROGDIR:startup.o" 0 0 1 0 0 0 0
+"StormC:lib/" 0 "StormC:lib/logfile" 0 1 1
+0 "_WizardSurface"
+0 0 50 0 50 0 50 0 0
+0 0 0 0 0 0 0 0
+Run
+30 "" "" "" 0
+""
+
+1 "CON://1280/1024/Storm Console/AUTO/WAIT/SCREEN StormScreen" "RAM:Output" "RAM:Input"
+1 0
+0 0 0 "" ""
+Settings (End)
+File
+1 "UsbDriver.c"
+"UsbDriver.c"
+"Compiler:Usb/Usbdriver/protos/Endpoint_protos.h"
+"Compiler:Usb/Usbdriver/protos/interrupt_protos.h"
+"Compiler:Usb/Usbdriver/protos/gfxmemory_protos.h"
+"Compiler:Usb/Usbdriver/headers/gfxmemory.h"
+"Compiler:Usb/Usbdriver/protos/HcDriver_protos.h"
+Storm Shell Project (Dependencies)
+"objects/UsbDriver.o" "objects/UsbDriver.debug"
+""
+"objects/UsbDriver.o" "objects/UsbDriver.debug"
+File
+1 "GfxMemory.c"
+"GfxMemory.c"
+"Compiler:Usb/Usbdriver/headers/gfxmemory.h"
+Storm Shell Project (Dependencies)
+"objects/GfxMemory.o" "objects/GfxMemory.debug"
+""
+"objects/GfxMemory.o" "objects/GfxMemory.debug"
+File
+1 "Hcdriver.c"
+"Hcdriver.c"
+"Compiler:Usb/Usbdriver/protos/gfxmemory_protos.h"
+"Compiler:Usb/Usbdriver/headers/gfxmemory.h"
+"Compiler:Usb/Usbdriver/protos/endpoint_protos.h"
+Storm Shell Project (Dependencies)
+"objects/Hcdriver.o" "objects/Hcdriver.debug"
+""
+"objects/Hcdriver.o" "objects/Hcdriver.debug"
+File
+1 "Interrupt.c"
+"Interrupt.c"
+"Compiler:Usb/Usbdriver/protos/Endpoint_protos.h"
+"Compiler:Usb/Usbdriver/protos/HCDriver_protos.h"
+Storm Shell Project (Dependencies)
+"objects/Interrupt.o" "objects/Interrupt.debug"
+""
+"objects/Interrupt.o" "objects/Interrupt.debug"
+File
+1 "Endpoint.c"
+"Endpoint.c"
+"Compiler:Usb/Usbdriver/headers/gfxmemory.h"
+"Compiler:Usb/Usbdriver/Protos/HCDriver_Protos.h"
+"Compiler:Usb/Usbdriver/Protos/GfxMemory_protos.h"
+Storm Shell Project (Dependencies)
+"objects/Endpoint.o" "objects/Endpoint.debug"
+""
+"objects/Endpoint.o" "objects/Endpoint.debug"
+File
+1 "Debugger.c"
+"Debugger.c"
+"Compiler:Usb/Usbdriver/Protos/HCDriver_Protos.h"
+"Compiler:Usb/Usbdriver/Protos/Endpoint_protos.h"
+Storm Shell Project (Dependencies)
+"objects/Debugger.o" "objects/Debugger.debug"
+""
+"objects/Debugger.o" "objects/Debugger.debug"
+Section
+1 1 100
+File
+2 "Compiler:Usbdriver/Protos/Endpoint_protos.h"
+"Compiler:Usbdriver/Protos/Endpoint_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usbdriver/Protos/GfxMemory_protos.h"
+"Compiler:Usbdriver/Protos/GfxMemory_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usbdriver/Protos/Hcdriver_protos.h"
+"Compiler:Usbdriver/Protos/Hcdriver_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usbdriver/Protos/Interrupt_protos.h"
+"Compiler:Usbdriver/Protos/Interrupt_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usbdriver/Protos/ListEntry_protos.h"
+"Compiler:Usbdriver/Protos/ListEntry_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "USB:ProtosAsm/AsmEndpoint_protos.h"
+"USB:ProtosAsm/AsmEndpoint_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "USB:ProtosAsm/Asmhc_protos.h"
+"USB:ProtosAsm/Asmhc_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "USB:ProtosAsm/Asmrh_Endpoint.h"
+"USB:ProtosAsm/Asmrh_Endpoint.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usbdriver/headers/gfxmemory.h"
+"Compiler:Usbdriver/headers/gfxmemory.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usb/Usbdriver/protos/gfxmemory_protos.h"
+"Compiler:Usb/Usbdriver/protos/gfxmemory_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usb/Usbdriver/headers/gfxmemory.h"
+"Compiler:Usb/Usbdriver/headers/gfxmemory.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usb/Usbdriver/protos/endpoint_protos.h"
+"Compiler:Usb/Usbdriver/protos/endpoint_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usb/Usbdriver/protos/interrupt_protos.h"
+"Compiler:Usb/Usbdriver/protos/interrupt_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usb/Usbdriver/protos/HcDriver_protos.h"
+"Compiler:Usb/Usbdriver/protos/HcDriver_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+2 "Compiler:Usb/Usbdriver/Protos/Debugger_protos.h"
+"Compiler:Usb/Usbdriver/Protos/Debugger_protos.h"
+Storm Shell Project (Dependencies)
+"" ""
+""
+Section
+2 1 95
+File
+12 "USB:Assembly/AsmEndpoint.asm"
+"USB:Assembly/AsmEndpoint.asm"
+Storm Shell Project (Dependencies)
+"objects/AsmEndpoint.o" ""
+""
+"objects/AsmEndpoint.o"
+File
+12 "USB:Assembly/Asmhc.asm"
+"USB:Assembly/Asmhc.asm"
+Storm Shell Project (Dependencies)
+"objects/Asmhc.o" ""
+""
+"objects/Asmhc.o"
+Section
+12 1 90
+File
+10 "C:UsbDriver"
+"UsbDriver"
+"C:UsbDriver"
+Storm Shell Project (Dependencies)
+"" ""
+""
+"C:UsbDriver.link"
+Section
+10 1 40
+File
+9 "Compiler:Usb/AddUsbFunction.¶"
+"Compiler:Usb/AddUsbFunction.¶"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+9 "Compiler:Usb/LupoUsbLibrary.¶"
+"Compiler:Usb/LupoUsbLibrary.¶"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+9 "Compiler:Usb/RootHub.¶"
+"Compiler:Usb/RootHub.¶"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+9 "Compiler:Usb/UsbMouse.¶"
+"Compiler:Usb/UsbMouse.¶"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+9 "Compiler:Usb/UsbStack.¶"
+"Compiler:Usb/UsbStack.¶"
+Storm Shell Project (Dependencies)
+"" ""
+""
+Section
+9 1 -10
+File
+5 "storm.lib"
+"storm.lib"
+Storm Shell Project (Dependencies)
+"" ""
+""
+File
+5 "amiga.lib"
+"amiga.lib"
+Storm Shell Project (Dependencies)
+"" ""
+""
+Section
+5 1 -50
+Storm Shell Project (End)
