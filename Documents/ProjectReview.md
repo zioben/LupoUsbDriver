@@ -35,7 +35,7 @@ Ogni sezione si chiude con una **raccomandazione** precisa. Il codice esistente 
 | Encoding | Il codice usa già fine riga **LF** (nessun CR/LF: l'affermazione iniziale era sbagliata). Solo 9 file contengono caratteri Latin-1: vanno convertiti in UTF-8 nel nuovo albero, con `.gitattributes` che impone LF |
 | CI | GitHub Actions su container con toolchain fissata per digest. Tre job: gcc, vbcc e test sull'host. Il pacchetto LHA si pubblica come artifact |
 | Layer | Sei strati con interfacce definite (§4.0): **L0** accesso al bus (PCMCIA/Gayle, in futuro PCI) → **L1** driver del chip host controller → **L2** interfaccia HCD standard → **L3** USBD → **L4** class driver → **L5** applicazioni e tool |
-| Hardware target | **Scheda USB PCMCIA a 16 bit nello slot dell'A1200** (§2.8). Le schede **CardBus (32 bit) non funzionano** nell'A1200. Una scheda 16 bit non può fare DMA, quindi il chip è per forza un controller a I/O programmato (PIO), non OHCI. **Primo passo: identificare il chip della scheda** |
+| Hardware target | **Scheda USB PCMCIA a 16 bit nello slot dell'A1200** (§2.8). **Le due schede in possesso (Hamlet HUSB2CB, Digicom 8E4172) sono CardBus e non utilizzabili**; candidata: **Ratoc REX-CFU1U (CF+, SL811HS)** con adattatore CF→PCMCIA + hub USB esterno (§2.8.2bis). Le schede **CardBus (32 bit) non funzionano** nell'A1200. Una scheda 16 bit non può fare DMA, quindi il chip è per forza un controller a I/O programmato (PIO), non OHCI. **Primo passo: identificare il chip della scheda** |
 | Architettura HCD | Driver per l'host controller come **Exec device** compatibile con l'interfaccia `devices/usbhardware.h`. Il primo è il device per il chip della scheda PCMCIA (per esempio `lupoisp116x.device` o `lupo811.device`). Il codice OHCI esistente diventa un HCD storico (`lupoohci.device`, per PCI). Il root hub è emulato dentro il device come un hub USB standard |
 | Interrupt | ISR minima che invia un `Signal()` al task dell'unità. Basta polling, basta `WaitTOF()`, basta interrupt SOF permanente |
 | Memoria / trasferimenti | Su PCMCIA niente DMA: l'HCD copia i dati da e verso il buffer interno del chip via I/O. I client non vedono mai la memoria hardware (oggi invece vedono la VRAM della Mediator). Per l'eventuale backend PCI resta il pool DMA con bounce buffer |
@@ -43,7 +43,7 @@ Ogni sezione si chiude con una **raccomandazione** precisa. Il codice esistente 
 | Class driver | `hid.class` generico (parser dei report descriptor con fallback sul boot protocol) per mouse, tastiera e joypad. Poi `hub.class`, poi mass storage |
 | Test | Test unitari sull'host Linux per i livelli portabili, più un **HCD virtuale** (mock) da usare in emulatore. L'hardware reale serve solo per l'HCD |
 | Roadmap | F0 conservazione → F1 build ricostruita → **F1.5 identificazione della scheda PCMCIA e layer L0** → F2 bug fix del legacy (senza test su hardware) → F3 HCD PCMCIA come device → F4 USBD v2 → F5 HID → F6 hub esterni → F7 bulk/mass storage → F8 altri controller |
-| Rischio n. 1 | **La scheda PCMCIA disponibile potrebbe essere CardBus**, quindi inutilizzabile. Poi: un A1200 funzionante su cui provare (l'A1200 originale è morto), documentazione del chip, quirk di Gayle |
+| Rischio n. 1 | **Le schede PCMCIA disponibili sono CardBus (verificato)**: serve procurare una scheda compatibile (REX-CFU1U o equivalente SL811HS). Poi: un A1200 funzionante su cui provare (l'A1200 originale è morto), documentazione del chip, quirk di Gayle |
 
 ---
 
@@ -277,6 +277,32 @@ Questi vincoli vanno verificati sulla documentazione di Gayle e sui driver PCMCI
 3. con la scheda inserita, fare il dump del CIS (manfid, card ID, stringhe produttore e prodotto, configurazioni I/O) con un piccolo tool basato su `card.resource`. È anche il primo programma del nuovo layer L0.
 
 Se la scheda risulta CardBus, va procurata una scheda PC Card a 16 bit con chip ISP116x o SL811HS. In questo caso conviene preferire un ISP1161, per il riuso del modello OHCI.
+
+#### 2.8.2bis Schede in possesso: esito della verifica (novembre 2026)
+
+| Scheda | Indizi | Esito |
+|---|---|---|
+| **Hamlet HUSB2CB** ("CardBus to USB 2.0 PC Card", P/N CBU2N-N-HA) | "CardBus" scritto sull'etichetta, USB 2.0, striscia di massa dorata vicino al connettore | **CardBus: non utilizzabile sull'A1200** |
+| **Digicom 8E4172** ("PcCard USB 2.0", 4 porte, 480 Mbit/s) | USB 2.0 a 480 Mbit/s richiede un controller EHCI bus master, possibile solo su CardBus; striscia di massa dorata vicino al connettore | **Quasi certamente CardBus: non utilizzabile sull'A1200** |
+
+Entrambe montano quasi certamente un controller PCI OHCI/UHCI + EHCI (tipicamente NEC µPD72010x o VIA VT62xx). Lo si può verificare con `lspci` su un portatile Linux con slot CardBus. **Sull'A1200 non si possono usare**: lo slot accetta solo PC Card a 16 bit, a 5 V, di tipo I o II. Restano utili solo come riferimento su PC, oppure in futuro dietro un bridge PCI→CardBus su una busboard PCI, il che riporterebbe al codice OHCI legacy.
+
+**Alternativa concreta trovata:** la **Ratoc REX-CFU1U**, una scheda **CompactFlash (CF+)** con host controller **SL811HS** (USB 1.1, full e low speed, una porta). Ci sono indizi pubblici del suo uso come scheda PCMCIA: Linux ha il driver `sl811_cs` ("RATOC USB HOST CF+ Card") e NetBSD ha `slhci_pcmcia`. Una scheda CF si inserisce nello slot dell'A1200 con un **adattatore passivo CF→PCMCIA** (lo stesso usato per le CF come disco). Restano da verificare:
+
+- che la scheda accetti i 5 V (molte CF sono a doppia tensione);
+- la configurazione I/O nel CIS;
+- la reperibilità della scheda (usato).
+
+Per avere 2 o 4 porte basta un **hub USB esterno** (anche alimentato) collegato all'unica porta: è comunque necessario per F6.
+
+**Raccomandazione aggiornata:**
+
+1. Primo driver L1: **`sl811`**, sulla REX-CFU1U con adattatore CF→PCMCIA.
+2. Gli hub esterni diventano necessari già in F3–F4 per le porte multiple, e il bus è solo USB 1.1, adeguato a HID e hub.
+3. I driver Linux e NetBSD sono **riferimento concettuale**: GPL e BSD. Non va copiato codice GPL; per il BSD andrebbe comunque rispettata la licenza e la scelta clean-room resta la più semplice.
+4. Le alternative interne all'A1200, se il PCMCIA non dovesse funzionare, sono schede USB su **clockport** (per esempio RapidRoad), con un diverso L0 e un diverso L1.
+
+Ricerca dell'esistenza di vere PC Card USB a 16 bit (non CF): **nessuna confermata**. Si trovano discussioni sulla fattibilità ma nessun prodotto verificato.
 
 #### 2.8.3 Cosa si riutilizza del codice esistente
 
@@ -710,7 +736,7 @@ Attività trasversali da fare in ogni fase:
 
 ### 5.2 Prossimi passi concreti
 
-1. **Identificare la scheda USB PCMCIA:** marca e modello, sigla dei chip, CardBus o 16 bit. Se possibile, fotografare la scheda aperta. Questo determina il driver L1.
+1. ~~Identificare la scheda USB PCMCIA~~ fatto: entrambe CardBus. **Procurare una Ratoc REX-CFU1U (o un'altra CF+ USB con SL811HS) e un adattatore passivo CF→PCMCIA**, verificando il funzionamento a 5 V. Il primo driver L1 è `sl811`.
 2. Rivedere questo documento e decidere su D1 (`usbhardware.h`), sul modello a layer (§4.0) e sulla toolchain.
 3. **F0:** tag `legacy-2003`, attivazione di `.gitattributes`/`.gitignore` dalle bozze, `git mv Sources legacy/Sources`.
 4. **F1:** Dockerfile della toolchain, Makefile dalla bozza, conversione `.fd` → `.sfd`, scheletro di `lupousb.library` e prima build CI del legacy portato (con backend PCI stub).

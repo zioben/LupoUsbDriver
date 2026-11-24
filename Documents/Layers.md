@@ -1,6 +1,6 @@
 # LupoUsbDriver – Schema degli strati di sviluppo
 
-*Complemento a `ProjectReview.md` (§4.0). Hardware target: A1200 + scheda USB PCMCIA a 16 bit, 2/4 porte.*
+*Complemento a `ProjectReview.md` (§4.0). Hardware target: A1200 + scheda USB a 16 bit nello slot PCMCIA. Le schede Hamlet e Digicom in possesso sono CardBus e non utilizzabili. La candidata è la Ratoc REX-CFU1U (CF+, SL811HS, USB 1.1) con adattatore CF→PCMCIA, più un hub USB esterno per avere 2/4 porte (`ProjectReview.md` §2.8.2bis).*
 
 ## 1. Vista d'insieme
 
@@ -29,7 +29,7 @@
                                     │ submit() · abort() · rh_control() · rh_status()
  ╔══════════════════════════════════╧════════════════════════════════════════╗  │
  ║ L1  DRIVER DEL CHIP (HCD core)                                            ║  │
- ║     isp116x  |  sl811  |  ohci (legacy PCI)  |  virt (test)               ║  │
+ ║     sl811 (primo)  |  isp116x  |  ohci (legacy PCI)  |  virt (test)       ║  │
  ║     reset · scheduling · buffer interno/PTD · toggle/NAK · root hub emul. ║  │
  ╚══════════════════════════════════╤════════════════════════════════════════╝  ┘
                                     │ struct HwBus (include/lupousb/hwbus.h)
@@ -41,7 +41,7 @@
                                     │ registri Gayle, area I/O/attributo PCMCIA
                           ┌─────────┴──────────┐
                           │  HARDWARE          │  A1200 · Gayle · PC Card 16 bit
-                          │                    │  chip USB PIO (+ hub 2/4 porte)
+                          │                    │  CF+ SL811HS via adattatore + hub
                           └────────────────────┘
 
  ┌───────────────────────────────────────────────────────────────────────────┐
@@ -74,10 +74,10 @@ Le regole sono tre:
 | Voce | Descrizione |
 |---|---|
 | **Scopo** | Far eseguire trasferimenti USB al chip specifico |
-| **Responsabilità** | Reset e inizializzazione, gestione del buffer interno (PTD ATL/INTL per ISP116x, una transazione alla volta per SL811HS), toggle, NAK, retry, scheduling periodico per frame, interrupt del chip (ISR minima + `Signal()`), emulazione del root hub sulle porte del chip, gestione della scheda estratta |
+| **Responsabilità** | Reset e inizializzazione. Per l'SL811HS: una transazione alla volta programmata dalla CPU (buffer di 256 byte, registri a 8 bit tramite porta indirizzo e porta dati), interrupt di fine transazione e di SOF per scandire il frame. Per ISP116x: PTD ATL/INTL, toggle, NAK, retry, scheduling periodico per frame, interrupt del chip (ISR minima + `Signal()`), emulazione del root hub sulle porte del chip, gestione della scheda estratta |
 | **Interfaccia verso l'alto** | Header interno `src/hcd/hcd_core.h`: `hcd_init`, `hcd_submit(xfer)`, `hcd_abort(xfer)`, `hcd_rh_control()`, `hcd_rh_status()`, `hcd_isr()` |
 | **Usa** | Solo `struct HwBus` (L0) e `src/common` |
-| **Sorgenti** | `src/hcd/isp116x/` oppure `src/hcd/sl811/`, `src/hcd/ohci/` (legacy), `src/hcd/virt/` (mock) |
+| **Sorgenti** | `src/hcd/sl811/` (primo, per la REX-CFU1U), poi eventualmente `src/hcd/isp116x/`, `src/hcd/ohci/` (legacy), `src/hcd/virt/` (mock) |
 | **Dal legacy** | Logica del root hub (`RootHub.c`), algoritmi di intervallo e banda (`Endpoint.c`). Con ISP116x anche la conoscenza dei registri OHCI (`Hcdriver.c`) |
 | **Test** | Sull'host, con un chip finto (registri e buffer simulati in RAM); su A1200 reale |
 | **Fatto quando** | Reset della porta, `GET_DESCRIPTOR` sull'indirizzo 0 e un interrupt transfer da un mouse completati sull'hardware |
