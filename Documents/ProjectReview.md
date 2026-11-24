@@ -11,6 +11,13 @@ Questo documento ha quattro obiettivi:
 
 Ogni sezione si chiude con una **raccomandazione** precisa. Il codice esistente non è stato modificato: le uniche aggiunte sono questo documento e alcune bozze in `Documents/proposals/`, tutte marcate come bozze.
 
+> **Aggiornamento (revisione 2):** la Mediator non è più disponibile. Il nuovo hardware target è **l'A1200 con una scheda USB PCMCIA a 2 o 4 porte nello slot PCMCIA (Gayle)**. Ne seguono due novità:
+>
+> - il progetto si organizza esplicitamente **a layer** (§4.0);
+> - lo strato hardware si riprogetta per lo slot PCMCIA (§2.8).
+>
+> L'architettura dei livelli superiori resta valida, anzi la separazione in layer è proprio ciò che rende possibile il cambio di hardware senza riscrivere stack e classi.
+
 ---
 
 ## 0. Sintesi delle raccomandazioni
@@ -27,14 +34,16 @@ Ogni sezione si chiude con una **raccomandazione** precisa. Il codice esistente 
 | Repository | Tag `legacy-2003` sullo stato attuale, poi spostamento dei sorgenti originali in `legacy/` e nuovo albero `src/` `include/` `sfd/` `tools/` `tests/`. Eliminare dall'albero `.o`, `.debug`, eseguibili e `.info` |
 | Encoding | Il codice usa già fine riga **LF** (nessun CR/LF: l'affermazione iniziale era sbagliata). Solo 9 file contengono caratteri Latin-1: vanno convertiti in UTF-8 nel nuovo albero, con `.gitattributes` che impone LF |
 | CI | GitHub Actions su container con toolchain fissata per digest. Tre job: gcc, vbcc e test sull'host. Il pacchetto LHA si pubblica come artifact |
-| Architettura HCD | Driver per l'host controller come **Exec device** compatibile con l'interfaccia `devices/usbhardware.h`: `lupoohci.device`. Il root hub è emulato dentro il device come un hub USB standard |
+| Layer | Sei strati con interfacce definite (§4.0): **L0** accesso al bus (PCMCIA/Gayle, in futuro PCI) → **L1** driver del chip host controller → **L2** interfaccia HCD standard → **L3** USBD → **L4** class driver → **L5** applicazioni e tool |
+| Hardware target | **Scheda USB PCMCIA a 16 bit nello slot dell'A1200** (§2.8). Le schede **CardBus (32 bit) non funzionano** nell'A1200. Una scheda 16 bit non può fare DMA, quindi il chip è per forza un controller a I/O programmato (PIO), non OHCI. **Primo passo: identificare il chip della scheda** |
+| Architettura HCD | Driver per l'host controller come **Exec device** compatibile con l'interfaccia `devices/usbhardware.h`. Il primo è il device per il chip della scheda PCMCIA (per esempio `lupoisp116x.device` o `lupo811.device`). Il codice OHCI esistente diventa un HCD storico (`lupoohci.device`, per PCI). Il root hub è emulato dentro il device come un hub USB standard |
 | Interrupt | ISR minima che invia un `Signal()` al task dell'unità. Basta polling, basta `WaitTOF()`, basta interrupt SOF permanente |
-| Memoria DMA | Pool interno all'HCD con bounce buffer: i client non vedono più la memoria della scheda grafica. Una piccola astrazione della busboard fornisce DMA, traduzione degli indirizzi CPU↔bus e operazioni sulla cache |
+| Memoria / trasferimenti | Su PCMCIA niente DMA: l'HCD copia i dati da e verso il buffer interno del chip via I/O. I client non vedono mai la memoria hardware (oggi invece vedono la VRAM della Mediator). Per l'eventuale backend PCI resta il pool DMA con bounce buffer |
 | USBD | `lupousb.library` v2: enumerazione, hub driver unico per root hub ed esterni, binding dinamico dei class driver |
 | Class driver | `hid.class` generico (parser dei report descriptor con fallback sul boot protocol) per mouse, tastiera e joypad. Poi `hub.class`, poi mass storage |
 | Test | Test unitari sull'host Linux per i livelli portabili, più un **HCD virtuale** (mock) da usare in emulatore. L'hardware reale serve solo per l'HCD |
-| Roadmap | F0 conservazione → F1 build ricostruita → F2 bug fix → F3 HCD come device → F4 USBD v2 → F5 HID → F6 hub esterni → F7 bulk/mass storage → F8 altri controller |
-| Rischio n. 1 | **Disponibilità di hardware di test** (l'A1200 è morto) e header di `pci.library` non ridistribuibili |
+| Roadmap | F0 conservazione → F1 build ricostruita → **F1.5 identificazione della scheda PCMCIA e layer L0** → F2 bug fix del legacy (senza test su hardware) → F3 HCD PCMCIA come device → F4 USBD v2 → F5 HID → F6 hub esterni → F7 bulk/mass storage → F8 altri controller |
+| Rischio n. 1 | **La scheda PCMCIA disponibile potrebbe essere CardBus**, quindi inutilizzabile. Poi: un A1200 funzionante su cui provare (l'A1200 originale è morto), documentazione del chip, quirk di Gayle |
 
 ---
 
@@ -150,7 +159,7 @@ Flag consigliati:
 - `-fomit-frame-pointer -Wall -Wextra -Werror=implicit-function-declaration`;
 - `-noixemul` o libnix per i tool, `-nostartfiles -nostdlib` per library e device.
 
-Un 68020 è il minimo realistico, perché la Mediator richiede comunque un A1200 o A4000 tower, spesso con acceleratore.
+Un 68020 è il minimo realistico: è la CPU dell'A1200, che è anche il nuovo target. Un acceleratore aiuta, perché con il PIO su PCMCIA la CPU copia ogni byte.
 
 ### 2.2 NDK
 
@@ -186,7 +195,7 @@ sfd/lupousb_lib.sfd          ← unica sorgente di verità (convertita dal .fd c
 
 - Lo **scheletro della libreria si scrive a mano in C**: una struttura `Resident` (romtag), una `InitTable` con la tabella delle funzioni, e le funzioni `LibInit`, `LibOpen`, `LibClose`, `LibExpunge` e `LibNull`. Per i parametri a registro si usano le macro SDI (`LIBFUNC`, `REG(a0, …)`). Lo stesso sorgente si compila con gcc e con vbcc, senza dipendere dall'auto-init di libnix o di StormC.
 - Va compilato senza startup code e senza dati globali inizializzati da costruttori. Tutto lo stato sta nella `LibBase` estesa (`struct LupoUsbBase`), e A6 viene sempre passato esplicitamente. Questo elimina `__saveds` e il modello small-data.
-- Un **device** (`lupoohci.device`) ha la stessa struttura, con in più `BeginIO` e `AbortIO`. Il suo `.sfd` contiene solo le funzioni standard.
+- Un **device** (per esempio `lupoisp116x.device`) ha la stessa struttura, con in più `BeginIO` e `AbortIO`. Il suo `.sfd` contiene solo le funzioni standard.
 - Alla libreria va assegnato un numero di **versione** (`$VER:` e `lib_Version`/`lib_Revision`).
 
 ### 2.4 Assembly 68k
@@ -206,7 +215,8 @@ sfd/lupousb_lib.sfd          ← unica sorgente di verità (convertita dal .fd c
 
 | Componente | Situazione | Priorità |
 |---|---|---|
-| OHCI su Mediator | È l'oggetto del progetto | 1 |
+| **Chip PIO su scheda PCMCIA a 16 bit (A1200)** | **Nuovo target** (§2.8) | 1 |
+| OHCI su Mediator | Era l'oggetto del progetto originale; Mediator non più disponibile | legacy |
 | OHCI su altre busboard PCI (Prometheus, G-REX, Mediator con altre versioni della `pci.library`) | Richiede l'astrazione della busboard (§4.4). Il nodo cruciale è **dove può fare DMA la scheda**: con la Mediator il busmaster PCI non raggiunge la RAM Amiga, da cui l'uso della VRAM. Va verificato caso per caso | 2 |
 | UHCI (schede VIA) | Schedulazione molto diversa (frame list + QH/TD, tutto via software). È un nuovo HCD dietro la stessa interfaccia | 3 |
 | EHCI (USB 2.0, es. NEC µPD720101 con companion OHCI) | Più complesso (QH/qTD, split transaction, TT). Ha senso solo dopo che OHCI e lo stack sono stabili | 4 |
@@ -230,7 +240,56 @@ sfd/lupousb_lib.sfd          ← unica sorgente di verità (convertita dal .fd c
 
 1. **Test unitari sull'host** (Linux, gcc nativo, in CI). Riguardano tutto ciò che è C portabile: parser di descrittori, parser dei report HID, traduzione HID→rawkey, logica di enumerazione e della macchina a stati dell'hub, schedulatore periodico/banda dell'HCD con registri finti in memoria.
 2. **HCD virtuale** (`lupovirt.device`): un device con la stessa interfaccia dell'HCD che simula in software un root hub con un mouse o una tastiera HID. Permette di provare in emulatore (anche FS-UAE) caricamento librerie, enumerazione, binding delle classi e iniezione in `input.device`, senza hardware.
-3. **Hardware reale** solo per `lupoohci.device`, con un tool di diagnostica (l'evoluzione di `UsbShowRegs`) e log su seriale.
+3. **Hardware reale** solo per l'HCD (oggi quello della scheda PCMCIA), con un tool di diagnostica (l'evoluzione di `UsbShowRegs`) e log su seriale.
+
+Per il nuovo hardware vale lo stesso schema. WinUAE emula lo slot PCMCIA/Gayle dell'A1200 con alcuni tipi di scheda (memoria SRAM, ATA/CompactFlash e, se ricordo bene, una scheda di rete NE2000), ma **nessuna scheda USB**. L'emulatore è quindi utile per provare il layer L0 (gestione inserimento ed estrazione, lettura del CIS, finestre di memoria e I/O) con una scheda qualsiasi, non il driver del chip USB.
+
+### 2.8 Nuovo hardware: scheda USB PCMCIA sull'A1200
+
+#### 2.8.1 Vincoli dello slot PCMCIA dell'A1200
+
+Questi vincoli vanno verificati sulla documentazione di Gayle e sui driver PCMCIA esistenti prima di scrivere codice, ma determinano già le scelte di progetto.
+
+| Vincolo | Conseguenza |
+|---|---|
+| Lo slot è **PC Card a 16 bit** (PCMCIA 2.0, controller Gayle) | Le schede **CardBus a 32 bit** (riconoscibili dalla striscia dorata di massa sul connettore, a 3,3 V) **non funzionano** e sono anche chiavettate per non entrare. **La maggior parte delle schede USB PCMCIA in commercio, soprattutto USB 2.0, è CardBus** |
+| **Niente DMA né bus master** su PC Card a 16 bit | Un controller **OHCI** (che legge da solo ED e TD in memoria) **non può funzionare** su questo slot. Una scheda USB a 16 bit usa per forza un controller **a I/O programmato** con buffer interno, dove la CPU copia i dati nel chip e il chip esegue il trasferimento |
+| Spazio di memoria comune e di attributo in finestre fisse dello spazio di indirizzamento dell'A1200 (indicativamente da `$600000`), I/O in un'area separata (indicativamente da `$A20000`) | Accessi da fare con le convenzioni corrette di Gayle (accessi a 8 e 16 bit, ordine dei byte, eventuali quirk sugli indirizzi pari e dispari). Da verificare |
+| La memoria Fast oltre i 4 MB sulla scheda trapdoor si sovrappone all'area PCMCIA | Configurazioni con 8 MB nella zona 24 bit rendono lo slot inutilizzabile. È un requisito da documentare per gli utenti |
+| Interrupt della scheda instradato da Gayle verso un interrupt di livello basso condiviso | Serve un server di interrupt che controlli la sorgente e **restituisca 0 se l'interrupt non è suo** (lo stesso principio del bug #13) |
+| Gestione dello slot tramite **`card.resource`** (`OwnCard`, `ReleaseCard`, `CardResetCard`, `CopyTuple`/`ReadCardTuple`, `GetCardMap`, `CardInterface`, `CardAccessSpeed`, …) | L0 deve prendere possesso dello slot in modo cooperativo (per esempio con `carddisk.device`), leggere il **CIS** per riconoscere la scheda e gestire l'**estrazione a caldo** in modo sicuro |
+| Alcune schede richiedono il noto "PCMCIA reset fix" hardware sull'A1200 | Requisito da documentare per gli utenti |
+| Banda: I/O a 16 bit attraverso Gayle, nell'ordine di poche centinaia di KB/s – 1–2 MB/s secondo CPU e modalità di accesso | Sufficiente per HID, hub e audio a bassa banda. **Il mass storage sarà lento** anche con un chip USB 2.0 |
+
+#### 2.8.2 Quali chip si possono incontrare
+
+| Famiglia di chip | Tipo | Note per il progetto |
+|---|---|---|
+| **Philips/NXP ISP1160/ISP1161** | Host USB 1.1 a I/O programmato con buffer interno (ATL e INTL organizzati in PTD). L'ISP1161 ha anche un lato device. 2 porte downstream integrate | Il blocco registri dell'host è **compatibile con OHCI** (HcControl, HcInterruptStatus, HcRhDescriptorA, HcRhPortStatus …), ma vi si accede **indirettamente** tramite una porta comando e una porta dati. Una parte significativa della conoscenza OHCI del progetto (root hub, stati, interrupt) si **riutilizza**. È il caso più favorevole |
+| **ScanLogic/Cypress SL811HS** | Host USB 1.1 a I/O programmato molto semplice. 1 porta, con 2/4 porte ottenute tramite un chip hub sulla scheda | Ogni transazione è gestita a mano dalla CPU (un pacchetto alla volta, con interrupt a fine pacchetto). Driver semplice ma carico di CPU più alto. Lo scheduling (frame, NAK, toggle) è tutto software |
+| **NXP ISP1760/ISP1761** | Host USB 2.0 a I/O programmato con buffer interno (PTD di tipo EHCI) | Più complesso. Utile solo se la scheda lo monta, perché la banda resta comunque limitata da Gayle |
+| Chip OHCI/EHCI PCI (NEC µPD720101, VIA VT6212, …) | Bus master | Si trovano **solo su schede CardBus**: **non utilizzabili** sull'A1200 |
+
+**Azione immediata (fase F1.5):** identificare la scheda in possesso:
+
+1. guardare la sigla dei chip ed eventuale foto;
+2. controllare se è CardBus (striscia dorata, chiavetta);
+3. con la scheda inserita, fare il dump del CIS (manfid, card ID, stringhe produttore e prodotto, configurazioni I/O) con un piccolo tool basato su `card.resource`. È anche il primo programma del nuovo layer L0.
+
+Se la scheda risulta CardBus, va procurata una scheda PC Card a 16 bit con chip ISP116x o SL811HS. In questo caso conviene preferire un ISP1161, per il riuso del modello OHCI.
+
+#### 2.8.3 Cosa si riutilizza del codice esistente
+
+| Codice | Riuso con il nuovo hardware |
+|---|---|
+| `Endpoint.c` (ED/TD in memoria, done queue, albero interrupt) | **Non riutilizzabile direttamente** (niente DMA). La logica di scheduling periodico (intervalli, banda per frame) e di gestione degli errori si porta nel nuovo HCD come algoritmo |
+| `Hcdriver.c`, `Asmhc.asm` (registri OHCI) | **Riutilizzabile concettualmente con ISP116x**, che ha registri OHCI-compatibili. Cambia l'accesso (indiretto via porte I/O PCMCIA, non mappato in memoria). La separazione tra L0 e L1 lo rende facile: si cambia solo `hc_readl`/`hc_writel` |
+| `RootHub.c`/`RootHubClass.c` | La logica delle porte (connessione, reset, change bit) si riusa nell'emulazione del root hub dentro l'HCD |
+| `GfxMemory.c` | Non serve più su PCMCIA. Può servire come allocatore del **buffer interno del chip** (ATL/INTL), che va gestito anch'esso a blocchi |
+| `LupoUsbLibrary.c` (richieste Chapter 9), `UsbStack.c` (enumerazione) | Riutilizzabili nei layer L3 e L4, indipendenti dall'hardware |
+| `UsbMouse.c` | Riutilizzabile come base di `hid.class` (dopo le correzioni) |
+
+**Raccomandazione:** il legacy OHCI/Mediator si porta e si corregge **solo per compilare** (F1–F2), come riferimento e come possibile backend PCI futuro, **senza test su hardware**. Lo sviluppo attivo dell'HCD riparte sul chip della scheda PCMCIA, dietro la stessa interfaccia L2.
 
 ---
 
@@ -262,11 +321,13 @@ LupoUsbDriver/
 │   └── sdi/                (SDI_compiler.h, SDI_lib.h)
 ├── src/
 │   ├── common/             (endian.h, debug.c/h, lists, util)
-│   ├── bus/                (pcibus.h + mediator.c, openpci.c, …)
+│   ├── bus/                (L0: pcmcia_gayle.c [primo], pci_mediator.c, pci_openpci.c)
 │   ├── hcd/
-│   │   ├── devskel/        (romtag, BeginIO/AbortIO, unit task: comune a tutti gli HCD)
-│   │   ├── ohci/           (ohci_hw.h, ohci.c, ohci_sched.c, ohci_isr.c, ohci_roothub.c)
-│   │   └── virt/           (HCD virtuale per i test)
+│   │   ├── devskel/        (L2: romtag, BeginIO/AbortIO, unit task: comune a tutti gli HCD)
+│   │   ├── isp116x/        (L1: chip della scheda PCMCIA, se ISP1160/1161)
+│   │   ├── sl811/          (L1: alternativa, se SL811HS)
+│   │   ├── ohci/           (L1 legacy: ohci_hw.h, ohci.c, ohci_sched.c, ohci_isr.c, ohci_roothub.c)
+│   │   └── virt/           (L1 virtuale per i test)
 │   ├── usbd/               (lupousb.library: core, enum, hub driver, binding)
 │   └── classes/
 │       ├── hid/            (hid.class: parser report, mouse, tastiera, joypad)
@@ -275,6 +336,7 @@ LupoUsbDriver/
 ├── tools/
 │   ├── prefs/              (da UsbPrefs)
 │   ├── showregs/           (da UsbShowRegs)
+│   ├── cisdump/            (dump del CIS della scheda PCMCIA: primo tool di L0)
 │   └── usbinfo/            (elenco dispositivi/descrittori, sostituisce le printf dello stack)
 ├── tests/host/             (test unitari sull'host Linux)
 ├── dist/                   (script Installer, icone .info *sorgenti* per il pacchetto)
@@ -344,6 +406,28 @@ Bozza in `Documents/proposals/build.yml.draft`. Va tenuta fuori da `.github/work
 
 ## 4. Architettura del codice
 
+### 4.0 Modello a layer
+
+Il progetto si suddivide in sei strati. Ognuno ha un'**interfaccia definita** verso quello superiore e **non conosce** i dettagli di quelli più in basso. La regola: **un cambio di hardware tocca solo L0 e L1**.
+
+| Layer | Nome | Responsabilità | Componenti (target) | Interfaccia verso l'alto |
+|---|---|---|---|---|
+| **L0** | Accesso al bus | Possesso dello slot o della scheda, riconoscimento (CIS o PCI ID), mappatura delle finestre di memoria e I/O, accessi a 8/16/32 bit con il corretto ordine dei byte, installazione e rimozione dell'interrupt, notifica di inserimento ed estrazione, (solo PCI) memoria DMA e cache | `src/bus/pcmcia_gayle.c` (**primo backend**), in futuro `src/bus/pci_mediator.c`, `src/bus/pci_openpci.c` | `struct HwBus`: `read8/16/32`, `write8/16/32`, `read_fifo`/`write_fifo` (copia a blocchi), `add_irq`/`rem_irq`, `on_remove`, (opzionale) `dma_alloc`/`cpu_to_bus`/`dma_sync` |
+| **L1** | Driver del chip (HCD core) | Programmazione del controller, scheduling dei trasferimenti, gestione del buffer interno o di ED/TD, interrupt del chip, emulazione del root hub | `src/hcd/isp116x/` o `src/hcd/sl811/` (**primo**), `src/hcd/ohci/` (legacy, per PCI), `src/hcd/virt/` (test) | Funzioni interne usate dallo scheletro del device: `submit(xfer)`, `abort(xfer)`, `rh_control()`, `rh_status()` |
+| **L2** | Interfaccia HCD | Exec device standard: `OpenDevice`, `BeginIO`/`AbortIO`, unità, task dell'unità, coda delle richieste, timeout | `src/hcd/devskel/` (comune a tutti gli HCD) | **`devices/usbhardware.h`** (`IOUsbHWReq`, `UHCMD_*`) |
+| **L3** | USBD | Enumerazione, indirizzi, configurazioni, hub driver unico, power budget, registro e binding delle classi, hot-plug | `lupousb.library` | API USBD (`sfd/lupousb_lib.sfd`) |
+| **L4** | Class driver | HID (mouse, tastiera, joypad), hub, mass storage … | `hid.class`, `hub` (dentro USBD o separato), `msd.class` | Verso il sistema: `input.device`, Exec device SCSI/trackdisk |
+| **L5** | Applicazioni e tool | Prefs, diagnostica, elenco dispositivi, log | `usbinfo`, `LupoUsbPrefs`, `showregs`, `usblog` | – |
+
+Note sul modello:
+
+- **L0 è puro accesso all'hardware e non sa nulla di USB.** Lo stesso `pcmcia_gayle.c` potrebbe servire un driver di rete PCMCIA. Questo lo rende testabile in WinUAE con una scheda PCMCIA qualsiasi.
+- **L1 non sa nulla di Exec device né di PCMCIA.** Riceve un `struct HwBus *` e lo usa per tutti gli accessi. Per esempio, un driver ISP116x è identico sia che il chip stia su PCMCIA sia, ipoteticamente, su clockport: cambia solo L0.
+- **L2 è il confine stabile del progetto.** Sopra L2 il codice non cambia, qualunque scheda si usi. Con `usbhardware.h` si può inoltre validare L0+L1+L2 con uno stack esistente, o L3+L4 con un HCD esistente.
+- **L3 e L4 sono C portabile:** si testano sull'host Linux (parser, enumerazione, hub) e in emulatore con l'HCD virtuale.
+- **Dipendenze ammesse solo verso il basso**, mai salti di livello. Il caso attuale del root hub che scrive nei registri da L4/L5 (`RootHubClass.c`) è esattamente ciò che il modello vieta.
+- Ogni layer ha la propria directory, il proprio header di interfaccia (`include/lupousb/hwbus.h`, `devices/usbhardware.h`, `proto/lupousb.h`) e i propri test.
+
 ### 4.1 Valutazione dell'architettura attuale
 
 ```
@@ -385,15 +469,17 @@ Bozza in `Documents/proposals/build.yml.draft`. Va tenuta fuori da `.github/work
  │ registro e binding delle classi, notifiche hot-plug         │
  └───────────────▲──────────────────────────────────────────────┘
                  │ Interfaccia HCD = devices/usbhardware.h (IOUsbHWReq, UHCMD_*)
- ┌───────────────┴───────────┐ ┌───────────────┐ ┌──────────────┐
- │ lupoohci.device           │ │ lupouhci.dev. │ │ lupovirt.dev │  HCD
- │  unit task + ISR, ED/TD,  │ │   (futuro)    │ │ (test/mock)  │
- │  pool DMA, root hub emul. │ └───────────────┘ └──────────────┘
- └───────────────▲───────────┘
-                 │ astrazione busboard (src/bus/pcibus.h)
- ┌───────────────┴───────────────────────────────────────────┐
- │ mediator.c (pci.library Elbox) │ openpci.c │ prometheus.c… │
- └───────────────────────────────────────────────────────────┘
+ ┌───────────────┴─────────────┐ ┌────────────────┐ ┌──────────────┐
+ │ lupoisp116x.device /        │ │ lupoohci.device│ │ lupovirt.dev │  L1+L2: HCD
+ │ lupo811.device (PCMCIA)     │ │ (legacy, PCI)  │ │ (test/mock)  │
+ │ unit task + ISR, buffer chip│ └───────▲────────┘ └──────────────┘
+ │ root hub emulato            │         │
+ └───────────────▲─────────────┘         │
+                 │ struct HwBus (include/lupousb/hwbus.h)
+ ┌───────────────┴──────────────────┐ ┌──┴─────────────────────────────┐
+ │ pcmcia_gayle.c (card.resource)   │ │ pci_mediator.c │ pci_openpci.c │  L0: bus
+ │  ← PRIMO BACKEND                 │ │  (futuro / opzionale)          │
+ └──────────────────────────────────┘ └────────────────────────────────┘
 ```
 
 #### D1 – HCD come Exec device con interfaccia `usbhardware.h`
@@ -407,7 +493,7 @@ Bozza in `Documents/proposals/build.yml.draft`. Va tenuta fuori da `.github/work
 
 Perché adottarla:
 
-1. **Validazione incrociata.** `lupoohci.device` si può provare con uno stack esistente e collaudato, e il nuovo USBD si può provare con un HCD esistente. È il modo più rapido per capire da che parte sta un bug.
+1. **Validazione incrociata.** Il device PCMCIA si può provare con uno stack esistente e collaudato, e il nuovo USBD si può provare con un HCD esistente. È il modo più rapido per capire da che parte sta un bug. Va verificato se esistono già driver `usbhardware` per schede PCMCIA a 16 bit sull'A1200: se sì, sono un ottimo banco di prova per L3/L4; se no, il device sarebbe utile anche ad altri.
 2. **Hub esterni gratis.** Root hub ed hub esterni passano dallo stesso hub driver (D6).
 3. **Separazione netta.** UHCI ed EHCI diventano altri device dietro la stessa interfaccia, e l'USBD non cambia.
 4. **Utilità per gli utenti.** Un device compatibile può servire anche a chi usa altri stack.
@@ -418,7 +504,9 @@ Perché adottarla:
 
 #### D2 – Interrupt: ISR minima e `Signal()` al task dell'unità
 
-- **ISR:**
+Il principio vale per qualunque chip: l'ISR sta in L0+L1, la logica nel task dell'unità. Su PCMCIA l'ISR si aggancia tramite L0 all'interrupt di Gayle (condiviso). Deve leggere lo stato del chip **via I/O PCMCIA**, fare l'ack e segnalare il task. Va anche protetta contro la scheda estratta: se la lettura restituisce `0xFFFF`, la scheda non c'è più e l'ISR deve restituire 0. Di seguito il caso OHCI come esempio concreto; per ISP116x i bit sono analoghi (registri OHCI-compatibili più gli interrupt del buffer ATL/INTL).
+
+- **ISR (esempio OHCI):**
   1. legge `HcInterruptStatus & HcInterruptEnable`;
   2. se il risultato è 0, **restituisce 0**, perché la catena è condivisa;
   3. per WDH legge `HccaDoneHead & ~0xF`, lo accoda a una lista privata e azzera l'HCCA;
@@ -432,17 +520,59 @@ Perché adottarla:
 - **SOF** si abilita solo come one-shot quando serve sincronizzarsi col frame, per esempio per rimuovere un ED dalla lista periodica in sicurezza (skip, attesa di un frame, unlink). **Mai in permanenza.**
 - `AbortIO` è supportato: si mette lo skip sull'ED, si attende il frame, si tolgono i TD della richiesta e si risponde con `IOERR_ABORTED`.
 
-#### D3 – Gestione di ED, TD e banda interna all'HCD
+#### D3 – Gestione dei trasferimenti e della banda interna all'HCD
+
+**Chip PCMCIA a I/O programmato (target):**
+
+- **ISP116x:** l'HCD costruisce i PTD (intestazione del trasferimento + dati) e li copia nel buffer ATL (control e bulk) o INTL (interrupt) del chip con `write_fifo` di L0. A fine transazione legge stato e dati. Il buffer interno è piccolo (pochi KB), quindi l'HCD lo gestisce come un pool a blocchi e spezza i trasferimenti lunghi.
+- **SL811HS:** una transazione alla volta, programmata dalla CPU. Il task (o l'ISR, per i soli passi brevi) avanza una macchina a stati per ogni trasferimento attivo, con priorità al periodico all'inizio di ogni frame (SOF).
+- In entrambi i casi **toggle, NAK, retry e intervalli periodici sono gestiti in software dall'HCD**. La logica di scheduling del vecchio `Endpoint.c` (intervalli, banda per frame) si riusa come algoritmo.
+
+**OHCI (legacy, per un eventuale backend PCI):**
 
 - La logica attuale di `Endpoint.c` (albero interrupt, liste control e bulk, done queue, gestione dell'halt) si porta quasi tale e quale in `ohci_sched.c`, correggendo i bug #1–#3 e #14.
 - Gli ED si creano su richiesta per (indirizzo, endpoint, direzione, velocità, MPS) e si distruggono a `UHCMD_USBRESET` o quando l'USBD segnala la rimozione del dispositivo.
 - Il toggle sta sempre nel **carry dell'ED**. Per i TD non di controllo il campo toggle del TD vale 0.
 - Il controllo di banda periodica si fa all'apertura del primo trasferimento interrupt su un endpoint, con lo stesso algoritmo attuale corretto.
 
-#### D4 – Memoria DMA e astrazione della busboard
+#### D4 – Astrazione del bus (layer L0) e memoria
+
+Interfaccia L0 comune a tutti i backend:
 
 ```c
-/* src/bus/pcibus.h – bozza concettuale */
+/* include/lupousb/hwbus.h – bozza concettuale */
+struct HwBus;                       /* opaco: un'istanza per slot/scheda */
+struct HwBusOps {
+    UBYTE  (*read8)  (struct HwBus *, ULONG off);
+    UWORD  (*read16) (struct HwBus *, ULONG off);
+    void   (*write8) (struct HwBus *, ULONG off, UBYTE v);
+    void   (*write16)(struct HwBus *, ULONG off, UWORD v);
+    void   (*read_fifo) (struct HwBus *, ULONG off, APTR dst, ULONG len); /* copia a blocchi, ciclo stretto */
+    void   (*write_fifo)(struct HwBus *, ULONG off, CONST_APTR src, ULONG len);
+    BOOL   (*add_irq)(struct HwBus *, struct Interrupt *);
+    void   (*rem_irq)(struct HwBus *, struct Interrupt *);
+    BOOL   (*present)(struct HwBus *);                 /* scheda ancora inserita? */
+    void   (*set_remove_hook)(struct HwBus *, struct Hook *); /* notifica estrazione */
+    /* solo bus con DMA (PCI): NULL su PCMCIA */
+    APTR   (*dma_alloc)(struct HwBus *, ULONG size, ULONG align);
+    void   (*dma_free) (struct HwBus *, APTR);
+    ULONG  (*cpu_to_bus)(struct HwBus *, APTR);
+    void   (*dma_sync) (struct HwBus *, APTR, ULONG, int dir);
+};
+```
+
+**Backend `pcmcia_gayle.c` (primo):**
+
+- **Possesso dello slot** con `OwnCard()` di `card.resource`, con handler di inserimento, estrazione e stato. `ReleaseCard()` alla chiusura. Deve convivere con `carddisk.device` e con altri driver PCMCIA.
+- **Riconoscimento** tramite il CIS (`CopyTuple`): manfid e card ID, `CISTPL_CONFIG`/`CISTPL_CFTABLE_ENTRY` per la configurazione I/O. Si scrive il registro COR della scheda per abilitare la modalità I/O. Una tabella delle schede note associa la scheda al driver L1 corretto (ISP116x, SL811HS, …).
+- **Accessi** nell'area I/O e attributo di Gayle con le convenzioni corrette di larghezza e ordine dei byte. È tutto da verificare sulla documentazione hardware dell'A1200 e confrontando driver PCMCIA open source per A1200 (come concetto, senza copiare codice). `read_fifo`/`write_fifo` sono cicli stretti di `move.w`, l'unico punto dove un po' di assembly o di inline asm può valere la pena.
+- **Estrazione a caldo:** all'avviso di estrazione L0 marca il bus come assente e da quel momento tutte le letture restituiscono un valore sentinella. L1 annulla tutte le richieste con un errore specifico (in `usbhardware`, il device si dichiara "rimosso") e L3 vede la scomparsa di tutti i dispositivi del bus. **Mai** accedere alla scheda dopo l'estrazione: su Amiga può bloccare il sistema.
+- **Velocità di accesso** impostata con `CardAccessSpeed()` secondo il CIS o il datasheet del chip.
+
+**Backend PCI (eventuale, per il codice OHCI legacy):** stessa interfaccia più le funzioni DMA, secondo lo schema seguente.
+
+```c
+/* bozza concettuale delle funzioni aggiuntive per un backend PCI */
 struct PciBusOps {
     BOOL   (*find_controller)(struct PciBus *, ULONG classcode, ULONG index, struct PciFunc *out);
     APTR   (*map_bar)(struct PciFunc *, int bar);
@@ -467,7 +597,7 @@ struct PciBusOps {
 
 #### D5 – Configurazione
 
-- Le prefs passano da dump binario a **testo** (`ENVARC:USB/lupousb.prefs`, coppie chiave=valore) o a un chunk IFF versionato. Contengono solo ciò che non si può rilevare: finestra DMA sulla Mediator, override del frame interval, livello di log.
+- Le prefs passano da dump binario a **testo** (`ENVARC:USB/lupousb.prefs`, coppie chiave=valore) o a un chunk IFF versionato. Contengono solo ciò che non si può rilevare: override per schede PCMCIA non riconosciute dal CIS, finestra DMA (solo backend Mediator), override del frame interval, livello di log.
 - Il tool prefs legge e scrive lo stesso formato e mostra i controller rilevati.
 
 #### D6 – USBD (`lupousb.library` v2)
@@ -513,6 +643,8 @@ struct PciBusOps {
 
 | Area | Attuale | Target |
 |---|---|---|
+| Hardware | OHCI su Mediator PCI (non più disponibile) | Scheda USB PCMCIA a 16 bit sull'A1200; OHCI/PCI come backend opzionale |
+| Stratificazione | Confini sfumati (il root hub tocca i registri, i client vedono la VRAM) | Sei layer L0–L5 con interfacce definite |
 | Driver HC | Processo con protocollo privato | Exec device con interfaccia `usbhardware.h` |
 | Interrupt | ISR corposa, SOF continuo, polling con `WaitTOF` | ISR minima + `Signal()`, task in `Wait()`, SOF on demand |
 | ED/TD | Esposti ai client | Interni all'HCD |
@@ -525,11 +657,11 @@ struct PciBusOps {
 | Config | Struct binaria in `ENV:` | Rilevamento automatico + prefs testuali |
 | Test | Solo su hardware | Host + HCD virtuale + hardware |
 
-### 4.4 Altre busboard
+### 4.4 Altri bus e busboard
 
-L'astrazione di D4 è il punto d'innesto. L'ordine consigliato è:
+L'astrazione L0 di D4 è il punto d'innesto. **Il primo backend è `pcmcia_gayle.c`.** I backend PCI sono opzionali e servono solo a riattivare il codice OHCI legacy. Se un giorno verranno fatti, l'ordine consigliato è:
 
-1. `mediator.c` (porting di quanto esiste);
+1. `pci_mediator.c` (porting di quanto esiste);
 2. `openpci.c`, se la verifica conferma che copre Mediator, Prometheus e G-REX con un'unica API;
 3. backend specifici solo dove OpenPCI non arriva.
 
@@ -543,13 +675,14 @@ Per ogni backend la domanda chiave è sempre **"dove può fare DMA il busmaster?
 |---|---|---|---|---|
 | **F0 – Conservazione** | Tag `legacy-2003`, release con i binari originali, `.gitattributes`/`.gitignore`, spostamento in `legacy/`, rimozione di binari e `.info` dall'albero | Repository pulito, storico preservato | Altissima | Basso |
 | **F1 – Build ricostruita** | Container con toolchain, Makefile, SFD dal `.fd`, scheletro della libreria scritto a mano. Porting **minimo** dei sorgenti legacy a C standard: niente inizializzatori globali con chiamate, include con maiuscole corrette, `};else`, float, `struct` mancanti. CI verde con gcc e vbcc | Tutti i componenti legacy compilano in CI | Alta | **Medio-alto**: header e `.fd` della `pci.library`, sostituzione dell'auto-init StormC |
-| **F2 – Bug fix sul legacy** | Bug #1–#25 (prima #6, #12, #13, #16, poi #1–#5, #7–#11, #14, #17). Smoke test su hardware se disponibile | Il mouse funziona come nel 2003, senza crash all'uscita | Alta | **Alto: serve hardware** |
-| **F3 – HCD come device** | `lupoohci.device` con `usbhardware.h`, ISR + `Signal()`, ED/TD interni, bounce DMA, root hub emulato, backend Mediator. `lupovirt.device` per i test | Enumerazione e mouse funzionanti con uno stack di riferimento esistente sopra `lupoohci.device` | Alta | Alto (complessità, hardware) |
-| **F4 – USBD v2** | `lupousb.library` v2: enumerazione, hub driver unico, binding, notifiche, `usbinfo`. Test sull'host per enumerazione e descrittori | Con `lupovirt.device` in emulatore e con `lupoohci.device` su hardware, un dispositivo viene enumerato e bindato | Alta | Medio |
+| **F1.5 – Scheda PCMCIA e layer L0** | Identificazione della scheda (CardBus o 16 bit, sigla del chip, dump del CIS). Datasheet del chip. `include/lupousb/hwbus.h` e `src/bus/pcmcia_gayle.c` (`card.resource`, CIS, finestra I/O, interrupt, estrazione). Tool `cisdump`. Prove di L0 in WinUAE con una scheda PCMCIA emulata | Chip identificato e documentato. `cisdump` funziona su A1200 reale; inserimento ed estrazione senza blocchi | **Altissima** | **Alto**: scheda forse CardBus, documentazione di Gayle, quirk dello slot, A1200 funzionante da procurare |
+| **F2 – Bug fix sul legacy** | Bug #1–#25 (prima #6, #12, #13, #16, poi #1–#5, #7–#11, #14, #17), **solo per compilare e come riferimento**: senza Mediator non si può provare su hardware | Il legacy compila pulito con gcc e vbcc | Media (scesa: non più testabile) | Basso |
+| **F3 – HCD PCMCIA come device** | Scheletro del device L2 (`devskel`) con `usbhardware.h`. Driver L1 del chip (`isp116x` o `sl811`): reset, root hub emulato sulle 2/4 porte (incluso il chip hub della scheda, se presente), trasferimenti control e interrupt. ISR + `Signal()`. `lupovirt.device` per i test | Enumerazione e mouse funzionanti sull'A1200 con la scheda PCMCIA, idealmente anche con uno stack di riferimento esistente sopra il device | Alta | Alto (chip nuovo, debug solo su hardware) |
+| **F4 – USBD v2** | `lupousb.library` v2: enumerazione, hub driver unico, binding, notifiche, `usbinfo`. Test sull'host per enumerazione e descrittori. **Può procedere in parallelo a F1.5 e F3** grazie a `lupovirt.device` | Con `lupovirt.device` in emulatore e con il device PCMCIA su hardware, un dispositivo viene enumerato e bindato | Alta | Medio |
 | **F5 – HID generico** | `hid.class`: parser dei report, mouse (con rotellina), tastiera, joypad, prefs di mapping | Mouse e tastiera generici usabili in Workbench; joypad Gravis mappabile | Media-alta | Medio |
 | **F6 – Hub esterni** | Il `hub.class`/hub driver sugli hub fisici: power budget, dispositivi low-speed dietro hub full-speed (preambolo PRE gestito da OHCI), over-current | Mouse e tastiera dietro un hub USB 1.1/2.0 | Media | Medio |
-| **F7 – Bulk e mass storage** | Pipe bulk, `msd.class` (Bulk-Only Transport + SCSI transparent), esposto come Exec device stile `scsi.device` (`HD_SCSICMD`, `TD_*`, NSD 64 bit) per montare chiavette con FFS/SFS/PFS o FAT95 | Lettura e scrittura affidabili di una chiavetta | Media | Alto: prestazioni dei bounce sulla Mediator, gestione errori, robustezza |
-| **F8 – Altri controller e busboard** | `openpci.c`/altri backend, `lupouhci.device`, eventualmente EHCI | Stack funzionante su una seconda busboard e su UHCI | Bassa | Alto |
+| **F7 – Bulk e mass storage** | Pipe bulk, `msd.class` (Bulk-Only Transport + SCSI transparent), esposto come Exec device stile `scsi.device` (`HD_SCSICMD`, `TD_*`, NSD 64 bit) per montare chiavette con FFS/SFS/PFS o FAT95 | Lettura e scrittura affidabili di una chiavetta | Media | Alto: banda limitata dal PIO su Gayle, buffer interno del chip piccolo, gestione errori |
+| **F8 – Altri chip e bus** | Secondo driver L1 (SL811HS o ISP116x, quello non fatto in F3), eventuale ISP1760, backend PCI con il codice OHCI legacy, UHCI | Stack funzionante su un secondo chip o bus | Bassa | Alto |
 
 Attività trasversali da fare in ogni fase:
 
@@ -563,21 +696,26 @@ Attività trasversali da fare in ogni fase:
 
 | Rischio | Impatto | Mitigazione |
 |---|---|---|
-| **Nessun hardware di test** (A1200 morto) | Blocca F2, F3 e la validazione dell'HCD | Procurarsi presto un sistema con Mediator (o un'altra busboard) e una scheda USB OHCI (per esempio NEC µPD720101, che espone OHCI). Nel frattempo dare priorità ai test sull'host e all'HCD virtuale, che coprono USBD e classi |
-| Header e `.fd` della `pci.library` non ridistribuibili | CI incompleta | Download in CI da fonte ufficiale con checksum, backend stub, valutazione di OpenPCI |
-| WinUAE non emula OHCI | Nessun test dell'HCD in emulatore | HCD virtuale e test unitari con registri finti. A lungo termine si potrebbe contribuire un'emulazione OHCI a un emulatore open source (fuori ambito) |
+| **La scheda USB PCMCIA disponibile è CardBus** | Inutilizzabile sull'A1200 | Verificarlo subito (F1.5). In caso, cercare una PC Card a 16 bit con ISP1160/1161 o SL811HS |
+| **Chip della scheda poco documentato** | Driver L1 difficile | Cercare i datasheet prima di tutto. Preferire schede con chip documentati (ISP116x ha datasheet pubblici e registri OHCI-compatibili) |
+| **A1200 funzionante da procurare**, con il PCMCIA reset fix se serve e senza memoria Fast sovrapposta all'area PCMCIA | Blocca F1.5 (parte hardware) e F3 | Procurarlo presto. Nel frattempo test sull'host, HCD virtuale e prove di L0 in WinUAE |
+| Quirk dello slot PCMCIA (accessi, interrupt condivisi, estrazione a caldo) | Blocchi del sistema | L0 isolato e testato per primo, con un tool dedicato (`cisdump`). Studio dei driver PCMCIA esistenti come riferimento concettuale |
+| Banda limitata dal PIO su Gayle | Mass storage lento | Aspettative documentate. HID e hub sono l'obiettivo principale; il mass storage è un bonus |
+| Header e `.fd` della `pci.library` non ridistribuibili | Solo il legacy OHCI non compila in CI | Il problema riguarda ormai solo il backend PCI opzionale: backend stub in CI, download locale |
+| Nessun emulatore offre una scheda USB | Nessun test dell'HCD in emulatore | HCD virtuale e test unitari con un chip finto (registri e buffer simulati in memoria) per L1 |
 | Licenze (Poseidon con APL, progetto MIT) | Contaminazione del codice | Implementazione clean-room dell'interfaccia, nessun codice copiato; header di interfaccia come dipendenza esterna o riscritto dalla documentazione dopo verifica |
-| Sovrapposizione VRAM tra USB e RTG sulla Mediator | Corruzione grafica o DMA | Regione riservata documentata. Studiare l'allocazione tramite il sistema RTG |
+| (solo backend PCI opzionale) Sovrapposizione VRAM tra USB e RTG sulla Mediator | Corruzione grafica o DMA | Regione riservata documentata. Studiare l'allocazione tramite il sistema RTG |
 | Cache su 040/060 | Dati DMA incoerenti | `dma_sync` nel backend. Test con cache attive su un 040/060 |
 | Ambito eccessivo (EHCI, mass storage) | Progetto mai concluso | Fasi con criteri di uscita. F5 è già un traguardo pubblicabile |
 
 ### 5.2 Prossimi passi concreti
 
-1. Rivedere questo documento e decidere su D1 (`usbhardware.h`) e sulla toolchain.
-2. **F0:** tag `legacy-2003`, attivazione di `.gitattributes`/`.gitignore` dalle bozze, `git mv Sources legacy/Sources`.
-3. Recuperare l'SDK della `pci.library` e verificarne la licenza.
-4. **F1:** Dockerfile della toolchain, Makefile dalla bozza, conversione `.fd` → `.sfd`, scheletro di `lupousb.library` e prima build CI del legacy portato.
-5. In parallelo, procurarsi l'hardware di test.
+1. **Identificare la scheda USB PCMCIA:** marca e modello, sigla dei chip, CardBus o 16 bit. Se possibile, fotografare la scheda aperta. Questo determina il driver L1.
+2. Rivedere questo documento e decidere su D1 (`usbhardware.h`), sul modello a layer (§4.0) e sulla toolchain.
+3. **F0:** tag `legacy-2003`, attivazione di `.gitattributes`/`.gitignore` dalle bozze, `git mv Sources legacy/Sources`.
+4. **F1:** Dockerfile della toolchain, Makefile dalla bozza, conversione `.fd` → `.sfd`, scheletro di `lupousb.library` e prima build CI del legacy portato (con backend PCI stub).
+5. **F1.5:** procurare i datasheet del chip, scrivere `hwbus.h` e `pcmcia_gayle.c`, e il tool `cisdump`.
+6. In parallelo, procurarsi un A1200 funzionante su cui provare.
 
 ---
 

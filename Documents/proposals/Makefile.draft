@@ -39,9 +39,11 @@ headers: $(GEN_HDRS)
 # ---------------------------------------------------------------------------
 # Moduli
 COMMON_SRC := $(wildcard src/common/*.c)
-BUS_SRC    := src/bus/mediator.c
+BUS_SRC    := src/bus/pcmcia_gayle.c          # L0: primo backend (A1200 PCMCIA)
+PCI_SRC    := src/bus/pci_mediator.c          # L0: backend PCI opzionale (legacy OHCI)
 
-OHCI_SRC   := src/hcd/devskel/devskel.c $(wildcard src/hcd/ohci/*.c) $(BUS_SRC) $(COMMON_SRC)
+ISP_SRC    := src/hcd/devskel/devskel.c $(wildcard src/hcd/isp116x/*.c) $(BUS_SRC) $(COMMON_SRC)
+OHCI_SRC   := src/hcd/devskel/devskel.c $(wildcard src/hcd/ohci/*.c) $(PCI_SRC) $(COMMON_SRC)
 VIRT_SRC   := src/hcd/devskel/devskel.c $(wildcard src/hcd/virt/*.c) $(COMMON_SRC)
 USBD_SRC   := $(wildcard src/usbd/*.c) $(COMMON_SRC)
 HID_SRC    := $(wildcard src/classes/hid/*.c) $(COMMON_SRC)
@@ -49,15 +51,20 @@ HID_SRC    := $(wildcard src/classes/hid/*.c) $(COMMON_SRC)
 obj = $(patsubst %.c,$(BUILD)/obj/%.o,$(filter %.c,$(1))) \
       $(patsubst %.asm,$(BUILD)/obj/%.o,$(filter %.asm,$(1)))
 
-MODULES := $(BUILD)/Devs/USBHardware/lupoohci.device \
+MODULES := $(BUILD)/Devs/USBHardware/lupoisp116x.device \
            $(BUILD)/Devs/USBHardware/lupovirt.device \
            $(BUILD)/Libs/lupousb.library \
            $(BUILD)/Classes/USB/hid.class
 
-TOOLS   := $(BUILD)/C/usbinfo $(BUILD)/C/USBShowRegs $(BUILD)/Prefs/LupoUsbPrefs
+TOOLS   := $(BUILD)/C/cisdump $(BUILD)/C/usbinfo $(BUILD)/C/USBShowRegs $(BUILD)/Prefs/LupoUsbPrefs
 
 all: headers $(MODULES) $(TOOLS)
 
+$(BUILD)/Devs/USBHardware/lupoisp116x.device: $(call obj,$(ISP_SRC))
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(LDFLAGS_MODULE) -o $@ $^ $(LIBS_MODULE)
+
+# opzionale: make WITH_PCI=1 (richiede SDK pci.library in third_party/)
 $(BUILD)/Devs/USBHardware/lupoohci.device: $(call obj,$(OHCI_SRC))
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(LDFLAGS_MODULE) -o $@ $^ $(LIBS_MODULE)
