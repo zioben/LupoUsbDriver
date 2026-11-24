@@ -234,9 +234,10 @@ ULONG SetFrameInterval(PHCD_DEVICE_DATA devicedata,BOOL UpNotDown)
 
 ULONG HcFindDevice(PHCD_DEVICE_DATA dd)
 {
- UBYTE i=0,j=8,found=0;
+ UBYTE i=0,found=0;
+ UWORD j=8;   // UWORD: con UBYTE l'ultimo slot (8*32) andava in overflow
  UWORD a;
-   while((i<32)||(found==0))
+   while((i<32)&&(found==0))  // era ||: loop infinito se la scheda manca
    {
      if((HcDevice=FindPciDevFunc(j)))
        {

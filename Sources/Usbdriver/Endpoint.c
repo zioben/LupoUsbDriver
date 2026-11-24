@@ -158,9 +158,10 @@ PTRANSFER_DESCRIPTOR AllocateTransferDescriptor()
 
 void FreeTransferDescriptor(PTRANSFER_DESCRIPTOR td)
 {
- PUSBD_REQUEST request=td->TD_UsbdRequest;
+ PUSBD_REQUEST request;
  if (td)
  {
+   request=td->TD_UsbdRequest;
    // Elimina da USBD_REQUEST
    if(request)
    {
@@ -521,6 +522,7 @@ ULONG OpenControlPipe(PENDPOINT_DESCRIPTOR Endpoint)
 {
   if(Endpoint->ED_ListIndex!=ED_CONTROL) return(0);
   InsertEDForEndpoint(Endpoint);
+  return(1);
 }
 
 //-----------------------------------------------------------------------------
@@ -531,6 +533,7 @@ ULONG OpenBulkPipe(PENDPOINT_DESCRIPTOR Endpoint)
 {
   if(Endpoint->ED_ListIndex!=ED_BULK) return(0);
   InsertEDForEndpoint(Endpoint);
+  return(1);
 }
 
 //-----------------------------------------------------------------------------
@@ -561,7 +564,7 @@ ULONG CheckBandwidth(PENDPOINT_DESCRIPTOR ED)
  ULONG TempBand    =0;
  ULONG NextList    =0;
  ULONG SelectedList=0;
- ULONG i,j,k;
+ ULONG i,j=0,k;
  // Calcola la MIGLIORE e PEGGIORE Bandwidth a disposizione
  // Parto dalle liste da 32 ms
  for(i=0;i<32;i++)
@@ -611,7 +614,7 @@ ULONG CheckBandwidth(PENDPOINT_DESCRIPTOR ED)
     }
    if(TempBand>WorstBand) WorstBand=TempBand;
  }
- dd->EDList[BestList]-=ED->ED_Bandwidth;
+ dd->ListBandwidth[BestList]-=ED->ED_Bandwidth; // era EDList[]: corrompeva il puntatore all'ED
  if(WorstBand>dd->MaxBandwidthPerFrame) return(ED_EOF);
  return(BestList);
 }
@@ -632,7 +635,7 @@ ULONG OpenInterruptIsoPipe(PENDPOINT_DESCRIPTOR ED)
     if((WhichList=CheckBandwidth(ED))!=ED_EOF)
     {
        dd->ListBandwidth[WhichList]+=ED->ED_Bandwidth;
-       dd->AviableBandwidth+=ED->ED_Bandwidth;
+       dd->AviableBandwidth-=ED->ED_Bandwidth;
     }
     else return(0);
     ED->ED_ListIndex=WhichList;
@@ -653,7 +656,8 @@ ULONG OpenPipe(PENDPOINT_DESCRIPTOR Endpoint)
   if((Endpoint->ED_Type)==Endpoint_Isochronous) return(OpenInterruptIsoPipe(Endpoint));
   if((Endpoint->ED_Type)==Endpoint_Interrupt)   return(OpenInterruptIsoPipe(Endpoint));
   if((Endpoint->ED_Type)==Endpoint_Control)     return(OpenControlPipe(Endpoint));
-  if((Endpoint->ED_Type)==Endpoint_Isochronous) return(OpenBulkPipe(Endpoint));  
+  if((Endpoint->ED_Type)==Endpoint_Bulk)        return(OpenBulkPipe(Endpoint));
+  return(0);
 }
 
 void  ClosePipe(PENDPOINT_DESCRIPTOR Endpoint)
@@ -804,14 +808,19 @@ PTRANSFER_DESCRIPTOR QueueNormalRequest(PENDPOINT_DESCRIPTOR endpoint, PUSBD_REQ
      Set_TD_BufferEnd(TD,(char*)CurrentBufferEnd);
      CurrentBufferStart=CurrentBufferEnd+1;
      Set_TD_DirectionPid(TD,request->USB_XferInfo);
-     if(endpoint->ED_Type==Endpoint_Control)
-         Set_TD_Toggle(TD,0);
-     else
-         Set_TD_Toggle(TD,3);
-     if ( (RemainingLength<0) && (!request->USB_ShortXferOk))
+     // Toggle 0 = preso dal toggleCarry dell'ED, che l'HC aggiorna a ogni
+     // TD completato. Prima per bulk/interrupt era forzato a 3 (sempre DATA1):
+     // un pacchetto su due finiva in DataToggleMismatch.
+     Set_TD_Toggle(TD,0);
+     // OHCI: Rounding=1 -> un pacchetto corto NON e' un errore.
+     // La logica era invertita: con ShortXferOk il pacchetto corto finiva
+     // in DataUnderrun e l'ED andava in halt (es. ogni report del mouse).
+     // Si abilita solo sull'ultimo TD della richiesta: su un TD intermedio
+     // l'HC proseguirebbe col TD dati successivo invece che con lo status.
+     if ( (RemainingLength<=0) && (request->USB_ShortXferOk))
          Set_TD_Rounding(TD,1);
      else
-         Set_TD_Rounding(TD,0);  // deve restare 0
+         Set_TD_Rounding(TD,0);
      Set_TD_DelayInterrupt(TD,7);
      Set_TD_ConditionCode(TD,NotAccessed);
      NEXTTD=AllocateTransferDescriptor();

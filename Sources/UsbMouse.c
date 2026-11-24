@@ -17,7 +17,10 @@
 #include <hcDriverStructs.h>
 #include <DefaultControlEndpoint.h>
 
-#define  IEQUALIFIERPOS IEQUALIFIER_RELATIVEMOUSE | IEQUALIFIER_MULTIBROADCAST | IEQUALIFIERB_MULTIBROADCAST
+// Nota: IEQUALIFIERB_xxx e' un numero di bit, non una maschera: la vecchia
+// definizione includeva IEQUALIFIERB_MULTIBROADCAST (=11) che accendeva
+// LSHIFT|RSHIFT|CONTROL su ogni evento.
+#define  IEQUALIFIERPOS (IEQUALIFIER_RELATIVEMOUSE)
 #define  FUNCTIONADDRESS 2
 
 //---------------------------------------------------------------------
@@ -63,28 +66,67 @@ ENDPOINT_CONTROL contout=
 //  Input Objects
 //---------------------------------------------------------------------
 
-struct InputEvent InputEvent1={0};
-struct InputEvent InputEvent2={0};
-ULONG  InputLocked=0;
-ULONG  TaskEsci=0;
+struct InputEvent MouseEvent={0};
+UBYTE  OldButtons=0;   // stato pulsanti dell'ultimo report
 
 struct IOStdReq   InputRequest={0};
 struct MsgPort    *Input_MP=CreatePort(NULL,0);
 
 //---------------------------------------------------------------------
 
-void MouseTask()
+// Inietta un singolo evento RAWMOUSE in input.device.
+// Viene chiamata dal task principale (proprietario di InputRequest e
+// Input_MP), una volta per ogni evento: prima un task separato
+// reiniettava l'ultimo evento ogni 1/50s, ripetendo i delta relativi.
+
+void WriteMouseEvent(UWORD Code,UWORD Qualifier,WORD dx,WORD dy)
 {
-  while(!TaskEsci)
+  MouseEvent.ie_NextEvent=NULL;
+  MouseEvent.ie_Class    =IECLASS_RAWMOUSE;
+  MouseEvent.ie_SubClass =0;
+  MouseEvent.ie_Code     =Code;
+  MouseEvent.ie_Qualifier=Qualifier;
+  MouseEvent.ie_position.ie_xy.ie_x=dx;
+  MouseEvent.ie_position.ie_xy.ie_y=dy;
+  InputRequest.io_Command=IND_WRITEEVENT;
+  InputRequest.io_Flags  =0;
+  InputRequest.io_Length =sizeof(struct InputEvent);
+  InputRequest.io_Data   =&MouseEvent;
+  DoIO((struct IORequest*)&InputRequest);
+}
+
+// Converte un report HID boot mouse (byte0=pulsanti, byte1=dx, byte2=dy)
+// in eventi Amiga: un evento per ogni pulsante che cambia stato
+// (IECODE_xBUTTON o IECODE_xBUTTON|IECODE_UP_PREFIX), il movimento viaggia
+// col primo evento; se nessun pulsante cambia si usa IECODE_NOBUTTON.
+
+void ProcessMouseReport(UBYTE *Report)
+{
+  static const UBYTE Mask[3]={0x01,0x02,0x04};
+  static const UWORD Code[3]={IECODE_LBUTTON,IECODE_RBUTTON,IECODE_MBUTTON};
+  UBYTE Buttons=Report[0]&0x07;
+  WORD  dx=(WORD)((BYTE)Report[1]);   // delta con segno
+  WORD  dy=(WORD)((BYTE)Report[2]);
+  UWORD Qual=IEQUALIFIERPOS;
+  UBYTE Sent=0;
+  int   b;
+
+  if(Buttons&0x01) Qual|=IEQUALIFIER_LEFTBUTTON;
+  if(Buttons&0x02) Qual|=IEQUALIFIER_RBUTTON;
+  if(Buttons&0x04) Qual|=IEQUALIFIER_MIDBUTTON;
+
+  for(b=0;b<3;b++)
   {
-    Delay(1);
-    InputRequest.io_Command=IND_WRITEEVENT;
-    InputRequest.io_Flags  =IOF_QUICK;
-    InputRequest.io_Length =sizeof(struct InputEvent);
-    if(!InputLocked) InputRequest.io_Data = &InputEvent2;
-    else				 InputRequest.io_Data = &InputEvent1;
-    DoIO((struct IORequest*)&InputRequest);
+    if((Buttons^OldButtons)&Mask[b])
+    {
+      if(Buttons&Mask[b]) WriteMouseEvent(Code[b],Qual,dx,dy);
+      else                WriteMouseEvent(Code[b]|IECODE_UP_PREFIX,Qual,dx,dy);
+      dx=dy=0;
+      Sent=1;
+    }
   }
+  if(!Sent && (dx || dy)) WriteMouseEvent(IECODE_NOBUTTON,Qual,dx,dy);
+  OldButtons=Buttons;
 }
 
 
@@ -113,8 +155,6 @@ int OpenAll()
    {
      Input_MP->mp_SigTask = FindTask(NULL);
      InputRequest.io_Message.mn_ReplyPort=Input_MP;
-     InputEvent1.ie_Class=IECLASS_RAWMOUSE;
-     InputEvent2.ie_Class=IECLASS_RAWMOUSE;
    }
   if(UsbLibrary)
   if(Support=AllocUsbSupport())
@@ -162,20 +202,28 @@ void ClearMouse(UBYTE FunctionNumber)
 
 void TestMouse(UBYTE FunctionNumber)
 {
- struct InputEvent *MouseEvent;
  int i;
- int j=0;
- struct Task *MyTask=NULL;
-
- char str[4]={0x0d,0x0a,0x0c,0};
  PENDPOINT_DESCRIPTOR ed=AllocEndpoint(Support,Endpoint_Interrupt,ED_INTERRUPT_16ms,&cont);
  if(ed)
  {
    if(OpenPipe(Support,ed))
    {
+    // SET_PROTOCOL(Boot): garantisce il formato di report boot
+    // (pulsanti, dx, dy) che ProcessMouseReport si aspetta.
+    // Opzionale per i device che non lo supportano: l'esito si ignora.
+    USB_Req->USB_Setup[0]=0x21;   // Class, Interface, Host->Device
+    USB_Req->USB_Setup[1]=0x0B;   // SET_PROTOCOL
+    USB_Req->USB_Setup[2]=0x00;   // wValue = 0 (Boot Protocol)
+    USB_Req->USB_Setup[3]=0x00;
+    USB_Req->USB_Setup[4]=0x00;   // wIndex = interfaccia 0
+    USB_Req->USB_Setup[5]=0x00;
+    USB_Req->USB_Setup[6]=0x00;   // wLength = 0
+    USB_Req->USB_Setup[7]=0x00;
+    USB_Req->USB_BufferLength=0;
+    SendUsbData(Support,UsbMouse->USB_DEVICE_ControlPipe,USB_Req);
+    printf("\nSET_PROTOCOL Result: %#X\n",USB_Req->USB_Status);
 
-    // Setup Idle interrupt for a mouse
-
+    // SET_IDLE: report ogni 4*4ms=16ms anche senza variazioni
     USB_Req->USB_Setup[0]=0x21;
     USB_Req->USB_Setup[1]=0x0A;
     USB_Req->USB_Setup[2]=0x00;
@@ -186,35 +234,28 @@ void TestMouse(UBYTE FunctionNumber)
     USB_Req->USB_Setup[7]=0x00;
     USB_Req->USB_BufferLength=0;
     SendUsbData(Support,UsbMouse->USB_DEVICE_ControlPipe,USB_Req);
-    printf("\nResult: %#X\n",USB_Req->USB_Status);
-    MyTask=CreateTask("USB MOUSE TASK",0,MouseTask,4096);
+    printf("SET_IDLE Result: %#X\n",USB_Req->USB_Status);
+
+    OldButtons=0;
     for(i=0;i<200;i++)
     {
-      printf("%d\n",i);
       USB_Req->USB_BufferLength=8;
       USB_Req->USB_ShortXferOk=1;
-      ReceiveUsbData(Support,ed,USB_Req);
-
-      // convert usb mouse data in a choerent InputEvnt
-
-      if(InputLocked==0) MouseEvent=&InputEvent1;
-      else               MouseEvent=&InputEvent2;
-	   InputLocked=!InputLocked;
-
-      MouseEvent->ie_Qualifier=IEQUALIFIERPOS;
-
-		MouseEvent->ie_Code=0;
-      if(  USB_Req->USB_Buffer[0] & 0x01)  MouseEvent->ie_Code |= IECODE_LBUTTON;
-      if(  USB_Req->USB_Buffer[0] & 0x02)  MouseEvent->ie_Code |= IECODE_RBUTTON;
-      if(  USB_Req->USB_Buffer[0] & 0x04)  MouseEvent->ie_Code |= IECODE_MBUTTON;
-      if(!(USB_Req->USB_Buffer[0] & 0x07)) MouseEvent->ie_Code  = IECODE_NOBUTTON;
-
-      MouseEvent->ie_Qualifier=IEQUALIFIERPOS | IEQUALIFIER_RELATIVEMOUSE;
-      MouseEvent->ie_position.ie_xy.ie_x=((WORD)USB_Req->USB_Buffer[1]);
-      MouseEvent->ie_position.ie_xy.ie_y=((WORD)USB_Req->USB_Buffer[2]);
+      // Usa il buffer solo se il trasferimento e' andato a buon fine
+      // e contiene almeno pulsanti+dx+dy
+      if(ReceiveUsbData(Support,ed,USB_Req) && USB_Req->USB_BytesCopied>=3)
+         ProcessMouseReport((UBYTE*)USB_Req->USB_Buffer);
+      else
+         printf("%d: Receive error %#X\n",i,USB_Req->USB_Status);
     }
-   FreeEndpoint(Support,ed);
+    // Rilascia eventuali pulsanti rimasti premuti
+    if(OldButtons)
+    {
+      UBYTE Released[3]={0,0,0};
+      ProcessMouseReport(Released);
+    }
    }
+   FreeEndpoint(Support,ed);   // libera l'endpoint anche se OpenPipe fallisce
  }
 }
 
@@ -262,7 +303,6 @@ void TestForceFeedback(UBYTE FunctionNumber)
       printf("Result: %#X\n",USB_Req->USB_Status);
 //	   WaitTOF();
     }
-    TaskEsci=1;
    }
    FreeEndpoint(Support,ed);
  }

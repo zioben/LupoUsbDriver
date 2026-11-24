@@ -165,12 +165,19 @@ UBYTE InitFunction(UBYTE FunctionSpeed)
   UBYTE Address=FindFreeAddress();
   PENDPOINT_DESCRIPTOR ed=ControlPipe[0];
   if(FunctionSpeed)    ed=ControlPipe[1];
+  if(Address==0)
+  {
+    printf("No free USB address\n");
+    return(0);
+  }
   if(GetDescriptor(Support,ed,UsbdRequest,DESCRIPTOR_DEVICE,0,0x08,0))
     if(SetAddress(Support,ed,UsbdRequest,Address))
     {
+      Delay(1); // il device ha fino a 2ms di recovery dopo SET_ADDRESS
       EndpointControl0.EC_Speed            =FunctionSpeed;
       EndpointControl0.EC_FunctionAddress  =Address;
-      EndpointControl0.EC_MaximumPacketSize=(UsbdRequest->USB_Buffer[6]<<8)+(UsbdRequest->USB_Buffer[7]&0xFF);
+      // bMaxPacketSize0 e' il solo byte 7 (il byte 6 e' bDeviceProtocol)
+      EndpointControl0.EC_MaximumPacketSize=(UBYTE)UsbdRequest->USB_Buffer[7];
       UsbDeviceList[Address].USB_DEVICE_ControlPipe=AllocEndpoint(Support,Endpoint_Control,ED_CONTROL,&EndpointControl0);
       if(!(OpenPipe(Support,UsbDeviceList[Address].USB_DEVICE_ControlPipe)))
       {
@@ -178,6 +185,13 @@ UBYTE InitFunction(UBYTE FunctionSpeed)
         return(0);
       }
       UsbDeviceList[Address].USB_DEVICE_Descriptor=GetDeviceDescriptor(Support,UsbDeviceList[Address].USB_DEVICE_ControlPipe,UsbdRequest);
+      if(!UsbDeviceList[Address].USB_DEVICE_Descriptor)
+      {
+        printf("GetDeviceDescriptor failed, UsbdStatus= %#X\n",UsbdRequest->USB_Status);
+        FreeEndpoint(Support,UsbDeviceList[Address].USB_DEVICE_ControlPipe);
+        UsbDeviceList[Address].USB_DEVICE_ControlPipe=NULL;
+        return(0);
+      }
       if(UsbDeviceList[Address].USB_DEVICE_Descriptor->iManufacturer)
               GetString(Support,UsbDeviceList[Address].USB_DEVICE_ControlPipe,UsbdRequest,UsbDeviceList[Address].USB_DEVICE_Descriptor->iManufacturer,UsbDeviceList[Address].iManufacturer);
       if(UsbDeviceList[Address].USB_DEVICE_Descriptor->iProduct)

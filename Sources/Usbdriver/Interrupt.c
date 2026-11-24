@@ -25,6 +25,10 @@ extern PciDevice *HcDevice;
 extern ROOT_HUB_MESSAGE RootHubMess;
 extern ULONG AvvisaCambioStatoRootHub;
 
+// Task del kernel da svegliare (impostati in Usbdriver.c)
+struct Task *HcSignalTask=NULL;
+ULONG        HcSignalMask=0;
+
 void InsertTail(PTRANSFER_DESCRIPTOR Head,PTRANSFER_DESCRIPTOR Tail,PTRANSFER_DESCRIPTOR HeadBlock)
 {
   PTRANSFER_DESCRIPTOR physHcTD=HeadBlock;
@@ -126,6 +130,10 @@ char ProcessInterrupt(register __a1 PHCD_DEVICE_DATA devicedata)
   //PTRANSFER_DESCRIPTOR TD,LASTTD,TMPTD;
   // Ricorda gli interrupt
   ContextInfo = devicedata->HC->HcInterruptStatus & INTMASKENABLE;//devicedata->HC->HcInterruptEnable;
+  // L'interrupt del Mediator puo' essere condiviso con altre schede PCI:
+  // se il controller non ha nulla da segnalare non e' nostro, lascia
+  // proseguire la catena.
+  if(ContextInfo==0) return(0);
   HcInterruptClear(devicedata);
   devicedata->IntCount[IBASE]++;
 
@@ -179,7 +187,7 @@ char ProcessInterrupt(register __a1 PHCD_DEVICE_DATA devicedata)
     // riutilizzo Frame
     i=RootHubMess.Status_Change;
     if(RootHubMess.NumPorts==0) RootHubMess.NumPorts=HcRhGetNumberDownstreamPorts(devicedata);
-    if(RootHubMess.DataChange[0]!=devicedata->HC->HcRhStatus) 
+    if(RootHubMess.DataChange[0]!=ConvertLong(devicedata->HC->HcRhStatus))
     {
      RootHubMess.DataChange[0]=ConvertLong(devicedata->HC->HcRhStatus);
      i|=1;
@@ -221,7 +229,9 @@ char ProcessInterrupt(register __a1 PHCD_DEVICE_DATA devicedata)
     // LASTTD->Coda della lista
     i=devicedata->HCCA->HccaDoneHead;
     devicedata->HCCA->HccaDoneHead=0;
-    LASTTD=TMPTD=TD=(PTRANSFER_DESCRIPTOR)ConvertLong(i);
+    // Il bit 0 di HccaDoneHead indica solo "altri interrupt pendenti":
+    // va tolto per ottenere l'indirizzo del TD (allineato a 16 byte)
+    LASTTD=TMPTD=TD=(PTRANSFER_DESCRIPTOR)(ConvertLong(i)&0xFFFFFFF0);
     if(TD)
     {
       while((TMPTD=Get_TD_NextTD(TMPTD))) LASTTD=TMPTD;
@@ -240,6 +250,9 @@ char ProcessInterrupt(register __a1 PHCD_DEVICE_DATA devicedata)
 //    PutMsg(devicedata->HcMessagePort,&InterruptMessage);
   }
   devicedata->HC->HcInterruptStatus=ContextInfo;
+  // Sveglia il kernel se ci sono TD completati o cambi sul root hub
+  if(HcSignalTask && (ContextInfo & (HC_INT_WDH|HC_INT_RHSC)))
+    Signal(HcSignalTask,HcSignalMask);
   HcInterruptEnable(devicedata,INTMASKENABLE);
   return(1);
 }

@@ -114,7 +114,7 @@ void SetPortFeature(PUSB_SUPPORT Req,
   case PORT_RESET:  HcRhPort_SetPortReset  (Req->devicedata,PORT);break;
   case PORT_SUSPEND:HcRhPort_SetPortSuspend(Req->devicedata,PORT);break;
   case PORT_POWER:  HcRhPort_SetPortPower  (Req->devicedata,PORT);break;
-  deafult:break;
+  default:break;
  }
 }
 

@@ -53,6 +53,7 @@ UBYTE __saveds FreeRootHubMessagePort(register __a0 PUSB_SUPPORT Req,
       Req->UsbRequest.IO_Data   =(ULONG)Port;
       return(SendUsbRequest(Req,KernelPort));
     }
+    return(0);
 }
 
 
@@ -63,7 +64,8 @@ ULONG __saveds Get32BitFrameNumber(register __a0 PUSB_SUPPORT Req)
 {
     if(!Req) return(0);
     Req->UsbRequest.IO_Command=CMD_GET_32BIT_FN;
-    return(SendUsbRequest(Req,KernelPort));
+    if(SendUsbRequest(Req,KernelPort)) return(Req->UsbRequest.IO_Data);
+    return(0);
 }
 
 //---------------------------------------------------------------------------------------------------------------------------
@@ -72,7 +74,7 @@ PHCD_DEVICE_DATA __saveds GetUsbBaseAddress(register __a0 PUSB_SUPPORT Req)
 {
   if(!Req)return(NULL);
   Req->UsbRequest.IO_Command=CMD_GET_USB_BASE;
-  if(SendUsbRequest(Req,KernelPort)==0)
+  if(SendUsbRequest(Req,KernelPort))   // SendUsbRequest restituisce 1 se ok
       return((PHCD_DEVICE_DATA)Req->UsbRequest.IO_Data);
   return(NULL);
 }
@@ -129,6 +131,7 @@ UBYTE __saveds   SetUsbState(register __a0 PUSB_SUPPORT Req,
 {
   if(!Req)return(0);
   Req->UsbRequest.IO_Command=CMD_SET_USB_STATE;
+  Req->UsbRequest.IO_Data   =usbstate;
   return(SendUsbRequest(Req,KernelPort));
 }
 
@@ -1046,7 +1049,8 @@ PUSB_DEVICE_DESCRIPTOR __saveds GetDeviceDescriptor(register __a0 PUSB_SUPPORT r
     ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdUSB       =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdUSB);
     ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idVendor     =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idVendor);
     ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idProduct    =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idProduct);
-    ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->iSerialNumber=SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->iSerialNumber);
+    // iSerialNumber e' un UBYTE (lo swap lo azzerava); va invertito bcdDevice
+    ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdDevice    =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdDevice);
     return((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved);
   }
   return(NULL);
@@ -1124,7 +1128,11 @@ ULONG __saveds GetString(register __a0 PUSB_SUPPORT req,
   {
     usb->USB_ShortXferOk=0;
     usb->USB_Reserved=2;
-    while((usb->USB_Buffer[usb->USB_Reserved]) || (usb->USB_Reserved<2*(MAX_STRING_CHARS-1)) || usb->USB_Reserved<usb->USB_BytesCopied)
+    // Copia il byte basso di ogni carattere UTF-16LE senza uscire da dest[]
+    // (prima la condizione in || poteva scrivere oltre MAX_STRING_CHARS)
+    while( (usb->USB_Reserved<usb->USB_BytesCopied) &&
+           (usb->USB_Buffer[usb->USB_Reserved]) &&
+           (((usb->USB_Reserved-2)>>1)<MAX_STRING_CHARS-1) )
     {
        dest[(usb->USB_Reserved-2)>>1]=usb->USB_Buffer[usb->USB_Reserved];
        usb->USB_Reserved+=2;

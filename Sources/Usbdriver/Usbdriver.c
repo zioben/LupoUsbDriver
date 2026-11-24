@@ -32,6 +32,11 @@ PHCD_DEVICE_DATA   HostController;
 ROOT_HUB_MESSAGE   RootHubMess;
 ULONG 				 AvvisaCambioStatoRootHub=0;
 
+// Segnale inviato dall'interrupt (Interrupt.c) quando c'e' lavoro da fare
+extern struct Task *HcSignalTask;
+extern ULONG        HcSignalMask;
+LONG                HcSignalBit=-1;
+
 
 #define MAXDELAY 10
 
@@ -47,10 +52,27 @@ void kill(void)
       {
         HcStop(HostController);
         HcDeleteDeviceData(HostController);
-		  GfxKillList();
       }
+      else
+      {
+        // Scheda non trovata: libera comunque porta e struttura,
+        // altrimenti la porta "Lupo Usb Port" resta registrata
+        // e il prossimo avvio crede che il kernel sia gia' attivo
+        HcKillMessagePort(HostController);
+        HcKillHc(HostController);
+      }
+      GfxKillList();
+      HostController=NULL;
     }
+ if (HcSignalBit!=-1)
+ {
+   HcSignalMask=0;
+   HcSignalTask=NULL;
+   FreeSignal(HcSignalBit);
+   HcSignalBit=-1;
+ }
  if (PciBase) CloseLibrary((struct Library*)PciBase);
+ PciBase=NULL;
 }
 
 //---------------------------------------
@@ -77,7 +99,17 @@ ULONG main (void)
      SetupGfxMemory(d->BufferMemAddress,d->BufferMemOffset,d->BufferMemSize);
    }
    CreateTDCache();
-   if(HcSetup(HostController)) kill();
+   if(HcSetup(HostController))
+   {
+     kill();
+     return(0);
+   }
+   // L'interrupt segnala il task invece di farlo girare in polling
+   if((HcSignalBit=AllocSignal(-1))!=-1)
+   {
+     HcSignalTask=FindTask(NULL);
+     HcSignalMask=1L<<HcSignalBit;
+   }
    if(AddMediatorPciInterrupt(HostController))
    {
 	  PHC_REQUEST   mymess=NULL;
@@ -113,12 +145,15 @@ ULONG main (void)
 			  HostController->DoneQueue2Locked=0;
 			  DELAY=0;
   			}
-         WaitTOF();
+         if(HcSignalMask)
+           Wait((1L<<HostController->HcMessagePort->mp_SigBit) | HcSignalMask);
+         else
+           WaitTOF(); // fallback se AllocSignal e' fallita
 		 	while((mymess=(PHC_REQUEST)GetMsg(HostController->HcMessagePort)))
 			{
+					mymess->IO_Error=NO_ERROR;
 					switch (mymess->IO_Command)
 					{
-						mymess->IO_Error=NO_ERROR;
 
 						//======================================================================
 						//----------------------------------------------------------------------
@@ -297,7 +332,8 @@ ULONG main (void)
 						case  CMD_OPEN_PIPE:
 								if(mymess->IO_Data)
 									{
- 									 OpenPipe((PENDPOINT_DESCRIPTOR)mymess->IO_Data);
+ 									 if(!OpenPipe((PENDPOINT_DESCRIPTOR)mymess->IO_Data))
+ 										 mymess->IO_Error=ERR_PIPE_NOT_OPENED;
 									}
 								else mymess->IO_Error=ERR_BAD_ARGUMENTS;
 						break;
@@ -371,10 +407,9 @@ ULONG main (void)
  						ReplyMsg((struct Message*)mymess);
  					}
 				}
-				while (mymess=(PHC_REQUEST)GetMsg(HostController->HcMessagePort));
         }
        FreeTDCache();
-	    RemoveMediatorPciInterrupt();
+	    RemoveMediatorPciInterrupt(HostController);
    }
    else
    {
