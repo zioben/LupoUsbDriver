@@ -728,4 +728,6 @@ Attività trasversali da fare in ogni fase:
 | `Documents/proposals/Makefile.draft` | Struttura del Makefile con toolchain selezionabile | `/Makefile` + `mk/` |
 | `Documents/proposals/build.yml.draft` | Workflow di GitHub Actions | `/.github/workflows/build.yml` |
 
+Vedi anche `Documents/Layers.md` per lo schema dettagliato degli strati di sviluppo.
+
 Sono **bozze**: non sono attive e vanno adattate quando il nuovo albero `src/` esisterà.
