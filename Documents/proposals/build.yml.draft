@@ -1,0 +1,53 @@
+# BOZZA - workflow GitHub Actions (vedi Documents/ProjectReview.md §3.6)
+# Non attivo: copiarlo in .github/workflows/build.yml quando Makefile e albero src/ esistono.
+name: build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+
+jobs:
+  build-gcc:
+    runs-on: ubuntu-latest
+    # Immagine con bebbo m68k-amigaos-gcc + NDK 3.2 + vasm/vlink + lha.
+    # Fissarla per digest; idealmente costruita da docker/Dockerfile e pubblicata su GHCR.
+    container: ghcr.io/OWNER/lupousb-toolchain@sha256:REPLACE_WITH_DIGEST
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dipendenze esterne (pci.library SDK) - verifica checksum
+        run: ./scripts/fetch-third-party.sh
+      - run: make TOOLCHAIN=gcc -j"$(nproc)" all dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LupoUsb-lha
+          path: dist/out/*.lha
+
+  build-vbcc:
+    runs-on: ubuntu-latest
+    container: ghcr.io/OWNER/lupousb-toolchain@sha256:REPLACE_WITH_DIGEST
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/fetch-third-party.sh
+      - run: make TOOLCHAIN=vbcc -j"$(nproc)" all
+
+  host-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [ build-gcc, build-vbcc, host-tests ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LupoUsb-lha
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: '*.lha'
