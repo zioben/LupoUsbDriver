@@ -6,6 +6,8 @@
  *   lupousbd DEVICE=lupovirt.device UNIT=1    ; virtual demo (moving mouse)
  *   lupousbd VERBOSE                          ; debug log
  *   lupousbd NOINPUT                          ; do not inject input events
+ *   lupousbd UNIT=1 TIMEOUT=10                ; quit by itself after 10 s
+ *   lupousbd LOG=RAM:usb.log                  ; log to a file (unbuffered)
  *
  * Ctrl-F prints the device tree, Ctrl-C quits.
  *
@@ -35,7 +37,22 @@ static void log_to_console(const char *line)
     PutStr((CONST_STRPTR)"\n");
 }
 
-enum { ARG_DEVICE, ARG_UNIT, ARG_VERBOSE, ARG_NOINPUT, ARG_COUNT };
+/* LOG=file: every line is appended and the file closed at once, so the log
+ * survives a hang or a crash (used by the emulator test). */
+static const char *log_file;
+
+static void log_to_file(const char *line)
+{
+    BPTR fh = Open((CONST_STRPTR)log_file, MODE_READWRITE);
+    if (!fh)
+        return;
+    Seek(fh, 0, OFFSET_END);
+    Write(fh, (APTR)line, (LONG)lu_strlen(line));
+    Write(fh, (APTR)"\n", 1);
+    Close(fh);
+}
+
+enum { ARG_DEVICE, ARG_UNIT, ARG_VERBOSE, ARG_NOINPUT, ARG_TIMEOUT, ARG_LOG, ARG_COUNT };
 
 int main(void)
 {
@@ -48,8 +65,9 @@ int main(void)
     static struct InputSink in;
     static const struct HidSink log_sink = { NULL, NULL, NULL, NULL };
     int rc = RETURN_FAIL;
+    u32 timeout_ms = 0, start;
 
-    rda = ReadArgs((CONST_STRPTR)"DEVICE/K,UNIT/N,VERBOSE/S,NOINPUT/S", args, NULL);
+    rda = ReadArgs((CONST_STRPTR)"DEVICE/K,UNIT/N,VERBOSE/S,NOINPUT/S,TIMEOUT/N,LOG/K", args, NULL);
     if (!rda) {
         PrintFault(IoErr(), (CONST_STRPTR)"lupousbd");
         return RETURN_FAIL;
@@ -58,7 +76,13 @@ int main(void)
         device = (const char *)args[ARG_DEVICE];
     if (args[ARG_UNIT])
         unit = *(ULONG *)args[ARG_UNIT];
+    if (args[ARG_TIMEOUT])
+        timeout_ms = *(ULONG *)args[ARG_TIMEOUT] * 1000;
     os_log_hook = log_to_console;
+    if (args[ARG_LOG]) {
+        log_file = (const char *)args[ARG_LOG];
+        os_log_hook = log_to_file;
+    }
     os_log_level = args[ARG_VERBOSE] ? LU_LOG_DEBUG : LU_LOG_INFO;
 
     if (!amiga_backend_open(&be, device, unit))
@@ -72,14 +96,18 @@ int main(void)
     if (!usbd_start(&bus))
         goto out;
 
+    start = os_time_ms();
     while (!(be.last_sigs & SIGBREAKF_CTRL_C)) {
         usbd_run(&bus, 20);
+        if (timeout_ms && os_time_ms() - start >= timeout_ms)
+            break;
         if (be.last_sigs & SIGBREAKF_CTRL_F) {
             be.last_sigs &= ~SIGBREAKF_CTRL_F;
             usbd_dump(&bus);
         }
     }
-    LU_INFO("lupousbd: shutting down");
+    LU_INFO("lupousbd: %u devices, shutting down", (u32)usbd_device_count(&bus));
+    usbd_dump(&bus);
     usbd_stop(&bus);
     rc = RETURN_OK;
 out:

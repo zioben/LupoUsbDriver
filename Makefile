@@ -81,7 +81,11 @@ abi-check:
 	    echo "error: third-party usbhardware/usb headers included outside tests/abi"; exit 1; fi
 	@echo "ABI check passed: hwreq.h matches usbhardware.device V2"
 
-amiga: abi-check $(BA)/Devs/lupovirt.device $(BA)/C/lupousbd $(BA)/C/lupotest
+$(BA)/C/mousepos: tools/mousepos/mousepos.c
+	@mkdir -p $(dir $@)
+	$(AMIGA_CC) $(AMIGA_CFLAGS) -o $@ $<
+
+amiga: abi-check $(BA)/Devs/lupovirt.device $(BA)/C/lupousbd $(BA)/C/lupotest $(BA)/C/mousepos
 
 docker-amiga:
 	docker run --rm -v "$(CURDIR)":/work -w /work $(TOOLCHAIN_IMAGE) make amiga
