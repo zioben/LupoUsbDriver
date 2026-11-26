@@ -462,7 +462,7 @@ typedef struct _USB_SUPPORT
 #define CMD_GET_USB_BASE  			3
 	// Input:	Niente
 	// Output:	IO_Data = PHCD_DEVICE_DATA 
-#define CMD_KILL_USB					-1
+#define CMD_KILL_USB					0xFFFF	// IO_Command is a UWORD: -1 never matched
 	// Input:	Niente
 	// Output	Niente  (MA si ha il Kill dello Stack)
 #define CMD_SET_USB_STATE			11
