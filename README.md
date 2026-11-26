@@ -10,7 +10,7 @@ The library was designed using Mediator PCI board with a USB 1.1 board installed
 
 # The new stack (2026)
 
-[![build](https://github.com/zioben/LupoUsbDriver/actions/workflows/build.yml/badge.svg?branch=claude/project-review)](https://github.com/zioben/LupoUsbDriver/actions/workflows/build.yml)
+[![build](https://github.com/zioben/LupoUsbDriver/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/zioben/LupoUsbDriver/actions/workflows/build.yml)
 
 The project is being rebuilt as a layered USB 1.1 stack for AmigaOS 3.x.
 The Mediator PCI board is no longer available, so the target hardware will
