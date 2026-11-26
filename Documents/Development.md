@@ -79,4 +79,10 @@ Le bozze `Documents/proposals/Makefile.draft` e `build.yml.draft` sono superate 
 3. **Impacchettare L3 come `lupousb.library`** con class driver caricati dinamicamente (registro delle classi in `LIBS:USB/` o `SYS:Classes/USB/`).
 4. **Trasferimenti bulk** già supportati da L1 e L3; poi `msd.class` (mass storage) con un dispositivo di memoria simulato.
 5. **Hardware reale:** scegliere il chip (MAX3421E o CH376 su clockport, vedi `ProjectReview.md`) e scrivere un nuovo L0 e un nuovo L1, riusando `rhemul.c` e i test esistenti come riferimento.
-6. Quando gli include dell'SDK saranno disponibili, metterli in `third_party/` (escluso da git) per consultazione.
+6. **Include dell'SDK:** ricevuti (novembre 2026) ed estratti in `third_party/sdk/` (escluso da git, non va mai committato). Contengono:
+   - gli include C e assembly di AmigaOS 3.1 (exec 40.x) nella versione distribuita con StormC, con FD, `proto`, `pragma`, `inline` e ReAction;
+   - **gli header di `pci.library` della Mediator** (`libraries/pci.h`, `clib/Pci_lib_protos.h`, `fd/pci_lib.fd`, © Elbox, "All Rights Reserved"). Erano l'unica dipendenza mancante per ricostruire la build del codice legacy (fase F1) e per un eventuale backend L0 PCI;
+   - `resources/card.h` e `cardres_lib.fd` per `card.resource`, già presenti anche nell'NDK 3.2 del container.
+
+   Non contengono i ROM Kernel Manual né i libri: in `Manuals/` ci sono solo le guide "Changes 3.0". Se esistono in formato elettronico vanno messi in `third_party/docs/`.
+   La build del nuovo stack continua a usare l'NDK 3.2 del container (necessario in CI); gli include 3.1 servono come riferimento e per il codice legacy.
