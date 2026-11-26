@@ -561,7 +561,7 @@ ULONG CheckBandwidth(PENDPOINT_DESCRIPTOR ED)
  ULONG TempBand    =0;
  ULONG NextList    =0;
  ULONG SelectedList=0;
- ULONG i,j,k;
+ ULONG i,j=0,k;
  // Calcola la MIGLIORE e PEGGIORE Bandwidth a disposizione
  // Parto dalle liste da 32 ms
  for(i=0;i<32;i++)
@@ -611,7 +611,8 @@ ULONG CheckBandwidth(PENDPOINT_DESCRIPTOR ED)
     }
    if(TempBand>WorstBand) WorstBand=TempBand;
  }
- dd->EDList[BestList]-=ED->ED_Bandwidth;
+ // undo the trial allocation (the caller adds the bandwidth for real)
+ dd->ListBandwidth[BestList]-=ED->ED_Bandwidth;
  if(WorstBand>dd->MaxBandwidthPerFrame) return(ED_EOF);
  return(BestList);
 }
@@ -632,7 +633,7 @@ ULONG OpenInterruptIsoPipe(PENDPOINT_DESCRIPTOR ED)
     if((WhichList=CheckBandwidth(ED))!=ED_EOF)
     {
        dd->ListBandwidth[WhichList]+=ED->ED_Bandwidth;
-       dd->AviableBandwidth+=ED->ED_Bandwidth;
+       dd->AviableBandwidth-=ED->ED_Bandwidth;
     }
     else return(0);
     ED->ED_ListIndex=WhichList;
