@@ -72,7 +72,7 @@ PHCD_DEVICE_DATA __saveds GetUsbBaseAddress(PUSB_SUPPORT Req __asm("a0"))
 {
   if(!Req)return(NULL);
   Req->UsbRequest.IO_Command=CMD_GET_USB_BASE;
-  if(SendUsbRequest(Req,KernelPort)==0)
+  if(SendUsbRequest(Req,KernelPort))     // SendUsbRequest returns 1 on success
       return((PHCD_DEVICE_DATA)Req->UsbRequest.IO_Data);
   return(NULL);
 }
@@ -129,6 +129,7 @@ UBYTE __saveds   SetUsbState(PUSB_SUPPORT Req __asm("a0"),
 {
   if(!Req)return(0);
   Req->UsbRequest.IO_Command=CMD_SET_USB_STATE;
+  Req->UsbRequest.IO_Data   =usbstate;
   return(SendUsbRequest(Req,KernelPort));
 }
 
