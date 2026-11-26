@@ -391,7 +391,6 @@ ULONG main (void)
  						ReplyMsg((struct Message*)mymess);
  					}
 				}
-				while (mymess=(PHC_REQUEST)GetMsg(HostController->HcMessagePort));
         }
        FreeTDCache();
 	    RemoveMediatorPciInterrupt(HostController);
