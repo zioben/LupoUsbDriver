@@ -345,9 +345,11 @@ ULONG HcSetup(PHCD_DEVICE_DATA hc)
 
 void HcStart(PHCD_DEVICE_DATA hc)
 {
+  // No HC_INT_SOF: it fired 1000 times per second only to increment a
+  // counter (the interrupt handler re-enables INTMASKENABLE, without SOF).
   ULONG INTMASK =
         			   HC_INT_RHSC | HC_INT_FNO | HC_INT_UE | HC_INT_RD |
-       			   HC_INT_SOF  | HC_INT_WDH | HC_INT_SO | HC_INT_OC | HC_INT_ME;
+       			   HC_INT_WDH | HC_INT_SO | HC_INT_OC | HC_INT_ME;
   ULONG LISTMASK= //HC_LIST_CONTROL;
 	                 HC_LIST_PERIODIC | HC_LIST_ISOCHRONOUS |
      		           HC_LIST_CONTROL  | HC_LIST_BULK;
