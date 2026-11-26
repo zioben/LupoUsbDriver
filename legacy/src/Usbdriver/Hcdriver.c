@@ -236,7 +236,7 @@ ULONG HcFindDevice(PHCD_DEVICE_DATA dd)
 {
  UBYTE i=0,j=8,found=0;
  UWORD a;
-   while((i<32)||(found==0))
+   while((i<32)&&(found==0))
    {
      if((HcDevice=FindPciDevFunc(j)))
        {
