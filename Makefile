@@ -33,7 +33,7 @@ AMIGA_CFLAGS := -m68020 -Os -fomit-frame-pointer -Wall -Wextra -Werror -Iinclude
 # Devices/libraries: no C library, no startup code, first function = entry point
 AMIGA_MODULE := -nostartfiles -nostdlib -fno-toplevel-reorder -fno-builtin
 
-.PHONY: all test sim amiga docker-amiga dist clean
+.PHONY: all test sim amiga abi-check docker-amiga dist clean
 
 all: test
 
@@ -70,7 +70,16 @@ $(BA)/C/lupotest: tests/host/test_main.c $(STACK_SRC) src/common/os_host.c $(HEA
 	@mkdir -p $(dir $@)
 	$(AMIGA_CC) $(AMIGA_CFLAGS) -Wno-format -o $@ tests/host/test_main.c $(STACK_SRC) src/common/os_host.c
 
-amiga: $(BA)/Devs/lupovirt.device $(BA)/C/lupousbd $(BA)/C/lupotest
+# ABI check: our MIT licensed include/lupousb/hwreq.h must be binary
+# compatible with the toolchain's devices/usbhardware.h (compile-time
+# asserts), and no shipped source may include the third-party headers.
+abi-check:
+	$(AMIGA_CC) $(AMIGA_CFLAGS) -std=gnu11 -fsyntax-only tests/abi/hwreq_abi.c
+	@if grep -rnE '#include *[<"]devices/(usbhardware|usb)\.h' src include; then \
+	    echo "error: third-party usbhardware/usb headers included outside tests/abi"; exit 1; fi
+	@echo "ABI check passed: hwreq.h matches usbhardware.device V2"
+
+amiga: abi-check $(BA)/Devs/lupovirt.device $(BA)/C/lupousbd $(BA)/C/lupotest
 
 docker-amiga:
 	docker run --rm -v "$(CURDIR)":/work -w /work $(TOOLCHAIN_IMAGE) make amiga

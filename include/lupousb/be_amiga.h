@@ -1,7 +1,7 @@
 /*
  * LupoUsbDriver - USBD backend for AmigaOS: talks to any usbhardware.device
  * (lupovirt.device, or a third party host controller driver) with
- * IOUsbHWReq requests.
+ * requests (include/lupousb/hwreq.h, binary compatible with IOUsbHWReq).
  *
  * SPDX-License-Identifier: MIT
  */
@@ -10,12 +10,12 @@
 
 #include <exec/ports.h>
 #include <devices/timer.h>
-#include <devices/usbhardware.h>
+#include "lupousb/hwreq.h"
 #include "lupousb/usbd.h"
 
 struct AmigaBackend {
     struct MsgPort *port;           /* replies of transfer requests */
-    struct IOUsbHWReq *ctl;         /* opened request, used as template */
+    struct LuHwReq *ctl;         /* opened request, used as template */
     struct MsgPort *tport;
     struct timerequest *treq;
     ULONG last_sigs;                /* signals seen by the last wait() */

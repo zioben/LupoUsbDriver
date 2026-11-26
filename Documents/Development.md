@@ -110,4 +110,10 @@ Le bozze `Documents/proposals/Makefile.draft` e `build.yml.draft` sono superate 
 
   Se si adotta la versione AROS, `lupovirt.device` deve controllare `mn_Length >= sizeof(struct IOUsbHWReqV2)` e non `sizeof(struct IOUsbHWReq)`, per continuare ad accettare client Poseidon V2.
 
-**Raccomandazione:** prima di una release pubblica, includere le copie AROS degli header in una cartella dedicata (per esempio `external/aros/include/devices/`), insieme al testo della APL, a `rom/usb/LEGAL` e al commit di provenienza, adattando il controllo di lunghezza come detto sopra. Così la build non dipende più dalla toolchain e la licenza è documentata.
+**Scelta adottata (26.11.2026): header indipendente.** `include/lupousb/hwreq.h` (MIT) definisce `struct LuHwReq` e le costanti `LUHCMD_*`, `LUHIOERR_*`, `LUHDIR_*`, `LUHF_*`, `LUHS_*` e `LUHA_*`, con nomi nostri e **la stessa disposizione binaria della V2** (90 byte; 76 per la V1). È stata ricavata dall'interfaccia pubblica a fini di interoperabilità, senza copiarne il testo.
+- `tests/abi/hwreq_abi.c` include sia `hwreq.h` sia il `devices/usbhardware.h` della toolchain e controlla con `_Static_assert` dimensioni, offset di tutti i campi e valori di tutte le costanti. Controlla anche che i codici `XS_*`, `XF_*` e `XD_*` del core portabile coincidano.
+- `make abi-check` (incluso in `make amiga`, quindi nella CI) compila il controllo e verifica che nessun sorgente in `src/` o `include/` includa gli header di terzi.
+- Una prova negativa con un campo alterato fa fallire la build, indicando gli offset discordanti.
+- `lupovirt.device` accetta richieste di almeno `LUHWREQ_SIZE_V2` byte, perché usa `lhr_DriverPrivate1/2`.
+
+Gli header AROS (APL) restano un'alternativa possibile; con l'header indipendente non servono.
