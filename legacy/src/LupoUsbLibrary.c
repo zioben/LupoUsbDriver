@@ -53,6 +53,7 @@ UBYTE __saveds FreeRootHubMessagePort(PUSB_SUPPORT Req __asm("a0"),
       Req->UsbRequest.IO_Data   =(ULONG)Port;
       return(SendUsbRequest(Req,KernelPort));
     }
+    return(0);
 }
 
 
@@ -63,7 +64,9 @@ ULONG __saveds Get32BitFrameNumber(PUSB_SUPPORT Req __asm("a0"))
 {
     if(!Req) return(0);
     Req->UsbRequest.IO_Command=CMD_GET_32BIT_FN;
-    return(SendUsbRequest(Req,KernelPort));
+    if(SendUsbRequest(Req,KernelPort))
+        return(Req->UsbRequest.IO_Data);   // the frame number, not the outcome
+    return(0);
 }
 
 //---------------------------------------------------------------------------------------------------------------------------
