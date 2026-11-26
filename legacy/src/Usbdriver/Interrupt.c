@@ -24,6 +24,8 @@
 extern struct PciDevice *HcDevice;	  
 extern ROOT_HUB_MESSAGE RootHubMess;
 extern volatile ULONG AvvisaCambioStatoRootHub;
+extern struct Task *ThisTask;
+extern ULONG IrqSigMask;
 
 void InsertTail(PTRANSFER_DESCRIPTOR Head,PTRANSFER_DESCRIPTOR Tail,PTRANSFER_DESCRIPTOR HeadBlock)
 {
@@ -243,6 +245,10 @@ char ProcessInterrupt(PHCD_DEVICE_DATA devicedata __asm("a1"))
     devicedata->HC->HcInterruptStatus = HC_INT_WDH;
 //    PutMsg(devicedata->HcMessagePort,&InterruptMessage);
   }
+  // wake the kernel task if there is work for it (Signal() is allowed
+  // in interrupts)
+  if((ContextInfo & (HC_INT_WDH | HC_INT_RHSC)) && IrqSigMask && ThisTask)
+    Signal(ThisTask,IrqSigMask);
   devicedata->HC->HcInterruptStatus=ContextInfo;
   HcInterruptEnable(devicedata,INTMASKENABLE);
   return(1);

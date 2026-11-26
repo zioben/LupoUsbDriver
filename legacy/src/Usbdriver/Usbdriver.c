@@ -31,6 +31,7 @@ struct  Task*      ThisTask=NULL; /* port: was initialized with FindTask before 
 PHCD_DEVICE_DATA   HostController;
 ROOT_HUB_MESSAGE   RootHubMess;
 volatile ULONG 			 AvvisaCambioStatoRootHub=0;   // written by the interrupt handler
+ULONG              IrqSigMask=0;   // signal sent by the interrupt handler to this task
 
 
 #define MAXDELAY 10
@@ -98,6 +99,11 @@ ULONG main (void)
      kill();
      return(0);
    }
+   {
+     // the interrupt handler wakes this task instead of being polled
+     BYTE sig=AllocSignal(-1);
+     if(sig!=-1) IrqSigMask=1L<<sig;
+   }
    if(AddMediatorPciInterrupt(HostController))
    {
 	  PHC_REQUEST   mymess=NULL;
@@ -133,7 +139,14 @@ ULONG main (void)
 			  HostController->DoneQueue2Locked=0;
 			  DELAY=0;
   			}
-         WaitTOF();
+         // Sleep until a request arrives or the interrupt handler has work
+         // for us (done queue, root hub change). Before, the loop polled at
+         // every video frame with WaitTOF(). Signals that arrived while we
+         // were busy are latched, so nothing is lost.
+         if(IrqSigMask)
+            Wait((1L<<HostController->HcMessagePort->mp_SigBit) | IrqSigMask);
+         else
+            WaitTOF();     // no free signal: fall back to polling
 		 	while((mymess=(PHC_REQUEST)GetMsg(HostController->HcMessagePort)))
 			{
 					mymess->IO_Error=NO_ERROR;
@@ -394,6 +407,14 @@ ULONG main (void)
         }
        FreeTDCache();
 	    RemoveMediatorPciInterrupt(HostController);
+       if(IrqSigMask)
+       {
+          ULONG m=IrqSigMask;
+          BYTE s=0;
+          IrqSigMask=0;
+          while(!(m&1)) { m>>=1; s++; }
+          FreeSignal(s);
+       }
    }
    else
    {
