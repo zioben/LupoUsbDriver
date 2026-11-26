@@ -92,3 +92,22 @@ Le bozze `Documents/proposals/Makefile.draft` e `build.yml.draft` sono superate 
    - **differenza consapevole:** alla chiusura dell'ultima unità Close aspetta, con un segnale, la terminazione del task dell'unità. ramdev invece fa `RemTask` diretto. Attendere in Close interrompe temporaneamente il Forbid di `CloseDevice`; è una pratica diffusa, ma va tenuta d'occhio nelle prove su AmigaOS.
    - `input/Set_Mouse.c` conferma l'uso di `IND_WRITEEVENT` fatto in `hidsink_input.c`. `gameport/Absolute_Joystick.c` è il riferimento per decidere come presentare i joystick USB.
    La build del nuovo stack continua a usare l'NDK 3.2 del container (necessario in CI); gli include 3.1 servono come riferimento e per il codice legacy.
+
+## 7. Licenza degli header `usbhardware.h` / `usb.h` (verificata il 26.11.2026)
+
+- **Versione nella toolchain** (`amigadev/crosstools`): `usbhardware.h` 2.1 (14.02.07), "(C) 2002-2007 Chris Hodges, All Rights Reserved", senza alcuna licenza. È quella usata oggi dalla build, e **non va copiata** nel repository.
+- **Versione AROS** (`aros-development-team/AROS`, `compiler/include/devices/usbhardware.h` 3.3 e `usb.h` 3.2): l'intestazione dice ancora "All Rights Reserved", ma nello stesso repository il file `rom/usb/LEGAL` contiene la dichiarazione di Chris Hodges del 26.08.2009: *"I, Chris Hodges, hereby provide my Poseidon sources and related files in the AROS Repository under the terms of the AROS Public License."* Il file `LEGAL` alla radice di AROS non elenca eccezioni per questi header. Quindi **le copie AROS sono distribuite con licenza APL 1.1**; la dicitura "All Rights Reserved" è un residuo storico.
+- **APL 1.1** (derivata dalla MPL 1.1) è un copyleft **a livello di file**:
+  - un file APL può stare in un progetto MIT come parte di una "Larger Work";
+  - quel file resta APL, con le sue note di copyright e il testo della licenza accanto;
+  - le modifiche a quel file vanno rese disponibili come sorgente.
+
+  Il nostro codice resta MIT. (Non è una consulenza legale.)
+- **Differenze tecniche** tra le due versioni:
+  - nella versione AROS `struct IOUsbHWReq` è la **V3** (campi USB3/xHCI in coda), mentre `IOUsbHWReqV2` corrisponde alla struttura della toolchain;
+  - non c'è più `#pragma pack(2)`, ininfluente su m68k dove l'allineamento è già a 2 byte;
+  - i valori di `UHCMD_*`, `UHIOERR_*`, `UHFF_*` e `UHA_*` sono gli stessi, con alcune aggiunte (`UHIOERR_BABBLE` = 13, nuovi flag e comandi ISO).
+
+  Se si adotta la versione AROS, `lupovirt.device` deve controllare `mn_Length >= sizeof(struct IOUsbHWReqV2)` e non `sizeof(struct IOUsbHWReq)`, per continuare ad accettare client Poseidon V2.
+
+**Raccomandazione:** prima di una release pubblica, includere le copie AROS degli header in una cartella dedicata (per esempio `external/aros/include/devices/`), insieme al testo della APL, a `rom/usb/LEGAL` e al commit di provenienza, adattando il controllo di lunghezza come detto sopra. Così la build non dipende più dalla toolchain e la licenza è documentata.
