@@ -170,9 +170,10 @@ PTRANSFER_DESCRIPTOR AllocateTransferDescriptor()
 
 void FreeTransferDescriptor(PTRANSFER_DESCRIPTOR td)
 {
- PUSBD_REQUEST request=td->TD_UsbdRequest;
+ PUSBD_REQUEST request;
  if (td)
  {
+   request=td->TD_UsbdRequest;      // read only after the NULL check
    // Elimina da USBD_REQUEST
    if(request)
    {
