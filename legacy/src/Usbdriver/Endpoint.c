@@ -804,10 +804,11 @@ PTRANSFER_DESCRIPTOR QueueNormalRequest(PENDPOINT_DESCRIPTOR endpoint, PUSBD_REQ
      Set_TD_BufferEnd(TD,(char*)CurrentBufferEnd);
      CurrentBufferStart=CurrentBufferEnd+1;
      Set_TD_DirectionPid(TD,request->USB_XferInfo);
-     if(endpoint->ED_Type==Endpoint_Control)
-         Set_TD_Toggle(TD,0);
-     else
-         Set_TD_Toggle(TD,3);
+     // Toggle 0x: DATA0/DATA1 taken from the ED toggle carry, which the HC
+     // updates on every retired TD. Forcing DATA1 (3) on interrupt/bulk TDs
+     // broke the alternation required by the USB protocol.
+     // (Control data TDs also follow the carry: DATA1 after the SETUP stage.)
+     Set_TD_Toggle(TD,0);
      if ( (RemainingLength<0) && (!request->USB_ShortXferOk))
          Set_TD_Rounding(TD,1);
      else
