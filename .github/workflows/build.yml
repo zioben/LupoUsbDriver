@@ -1,0 +1,68 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # bebbo m68k-amigaos-gcc + NDK 3.2 + vasm + lha, pinned by digest
+  TOOLCHAIN_IMAGE: amigadev/crosstools:m68k-amigaos@sha256:c745917130aa76b62b069d9d42a2fce8bd91d1a7d580dde778fa77c6c5f38f95
+
+jobs:
+  host-tests:
+    name: Host tests (Linux, ASan/UBSan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit and integration tests
+        run: make test
+      - name: Simulator
+        run: make sim && ./build/host/usbsim
+
+  amiga-build:
+    name: AmigaOS build (m68k-amigaos-gcc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Amiga binaries and LHA archive
+        run: docker run --rm -v "$PWD":/work -w /work "$TOOLCHAIN_IMAGE" make dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LupoUsbDriver-amiga
+          path: |
+            build/dist/LupoUsbDriver.lha
+            build/amiga/C/lupotest
+
+  amiga-tests:
+    name: 68k tests under vamos (emulated AmigaOS, big endian)
+    needs: amiga-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LupoUsbDriver-amiga
+          path: artifact
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install amitools (vamos)
+        run: pip install amitools==0.9.1 greenlet==3.5.6 machine68k==0.5.2
+      - name: Run the test suite on an emulated 68020
+        run: vamos -q -C 68020 artifact/amiga/C/lupotest
+
+  release:
+    name: Attach archive to release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [host-tests, amiga-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LupoUsbDriver-amiga
+          path: artifact
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifact/dist/LupoUsbDriver.lha

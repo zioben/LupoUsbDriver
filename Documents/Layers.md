@@ -2,6 +2,8 @@
 
 *Complemento a `ProjectReview.md` (§4.0). Hardware target: A1200 + scheda USB a 16 bit nello slot PCMCIA. Le schede Hamlet e Digicom in possesso sono CardBus e non utilizzabili. La candidata è la Ratoc REX-CFU1U (CF+, SL811HS, USB 1.1) con adattatore CF→PCMCIA, più un hub USB esterno per avere 2/4 porte (`ProjectReview.md` §2.8.2bis).*
 
+> **Stato (fase 1):** L0 e L1 sono implementati in versione **virtuale** (bus virtuale e chip simulato LVHC); L2–L4 sono implementati e testati sopra di essi. Vedi `Development.md`.
+
 ## 1. Vista d'insieme
 
 ```
