@@ -89,6 +89,8 @@ Osservazioni:
 
 ### 1.3 Bug confermati e nuovi rilievi
 
+> **Stato (fase F2, novembre 2026):** i bug #1–#19, #23, #24, #27–#34 sono corretti nel porting in `legacy/src`, uno per commit (`legacy/README.md`). #20, #21, #22 e #25 sono scelte di architettura, risolte dal nuovo stack.
+
 Bug già noti, tutti confermati:
 
 | # | File | Problema |
