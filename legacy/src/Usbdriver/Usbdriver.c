@@ -119,9 +119,9 @@ ULONG main (void)
          WaitTOF();
 		 	while((mymess=(PHC_REQUEST)GetMsg(HostController->HcMessagePort)))
 			{
+					mymess->IO_Error=NO_ERROR;
 					switch (mymess->IO_Command)
 					{
-						mymess->IO_Error=NO_ERROR;
 
 						//======================================================================
 						//----------------------------------------------------------------------
