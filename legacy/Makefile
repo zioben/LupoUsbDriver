@@ -24,7 +24,7 @@ OUT := $(O)/bin
 # The code is compiled as it was written (C89 with StormC habits): warnings
 # are reported but only real errors stop the build.
 CFLAGS := -m68020 -O1 -noixemul -std=gnu89 -fpermissive -fno-strict-aliasing -fcommon \
-          -D__saveds= -Wno-unknown-pragmas \
+          -D__saveds= -Wno-unknown-pragmas -MMD -MP \
           -I$(INC) -I$(L)/compat -I$(GEN) -I$(SRC)
 ASFLAGS := -Fhunk -devpac -m68020 -quiet -nowarn=62
 
@@ -85,6 +85,8 @@ $(O)/obj/glue/%.o: $(L)/glue/%.c
 $(O)/obj/gen/functable.o: $(GEN)/functable.c
 	@mkdir -p $(dir $@)
 	$(AMIGA_CC) -m68020 -O1 -c -o $@ $<
+
+-include $(shell find $(O)/obj -name '*.d' 2>/dev/null)
 
 # ---------------------------------------------------------------- programs
 DRIVER_OBJ := $(addprefix $(O)/obj/Usbdriver/,Usbdriver.o Hcdriver.o Interrupt.o Endpoint.o GfxMemory.o Debugger.o) \
