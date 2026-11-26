@@ -170,6 +170,7 @@ UBYTE InitFunction(UBYTE FunctionSpeed)
      && (MaxPacketSize0=UsbdRequest->USB_Buffer[7]))    // bMaxPacketSize0: byte 7
     if(SetAddress(Support,ed,UsbdRequest,Address))
     {
+      Delay(1);   // SET_ADDRESS recovery time: at least 2 ms (USB 9.2.6.3); 1 tick = 20 ms
       EndpointControl0.EC_Speed            =FunctionSpeed;
       EndpointControl0.EC_FunctionAddress  =Address;
       EndpointControl0.EC_MaximumPacketSize=MaxPacketSize0;
