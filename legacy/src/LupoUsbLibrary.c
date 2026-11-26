@@ -202,7 +202,7 @@ PUSB_SUPPORT AllocUsbSupport(void)
 UBYTE __saveds   InitUsbSupport(PUSB_SUPPORT Req __asm("a0"))
 {
  if(!Req) return(0);
- while (!(Req->UserPort=CreatePort(NULL,0)));
+ if (!(Req->UserPort=CreatePort(NULL,0))) return(0);
  Req->UsbRequest.IO_Command=CMD_GET_USB_BASE;
  Req->UsbRequest.message.mn_ReplyPort=Req->UserPort;
  if(SendUsbRequest(Req,KernelPort))
@@ -1045,7 +1045,7 @@ PUSB_DEVICE_DESCRIPTOR __saveds GetDeviceDescriptor(PUSB_SUPPORT req __asm("a0")
 {
   if (GetDescriptor(req,ed,usb,DESCRIPTOR_DEVICE,0,sizeof(USB_DEVICE_DESCRIPTOR),0))
   {
-    while(!(usb->USB_Reserved=(ULONG)AllocMem(sizeof(USB_DEVICE_DESCRIPTOR),MEMF_PUBLIC|MEMF_CLEAR)));
+    if(!(usb->USB_Reserved=(ULONG)AllocMem(sizeof(USB_DEVICE_DESCRIPTOR),MEMF_PUBLIC|MEMF_CLEAR))) return(NULL);
     CopyMem(usb->USB_Buffer,(APTR)usb->USB_Reserved,sizeof(USB_DEVICE_DESCRIPTOR));
     ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdUSB       =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdUSB);
     ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idVendor     =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idVendor);
@@ -1073,7 +1073,7 @@ PUSB_CONFIGURATION_DESCRIPTOR __saveds GetConfigurationDescriptor(PUSB_SUPPORT r
 {
   if(GetDescriptor(req,ed,usb,DESCRIPTOR_CONFIGURATION,ConfValue,sizeof(USB_CONFIGURATION_DESCRIPTOR),0))
    {
-    while(!(usb->USB_Reserved=(ULONG)AllocMem(sizeof(USB_CONFIGURATION_DESCRIPTOR),MEMF_PUBLIC|MEMF_CLEAR)));
+    if(!(usb->USB_Reserved=(ULONG)AllocMem(sizeof(USB_CONFIGURATION_DESCRIPTOR),MEMF_PUBLIC|MEMF_CLEAR))) return(NULL);
     CopyMem(usb->USB_Buffer,(APTR)usb->USB_Reserved,sizeof(USB_CONFIGURATION_DESCRIPTOR));
     ((PUSB_CONFIGURATION_DESCRIPTOR)usb->USB_Reserved)->wTotalLength =SwapWord(((PUSB_CONFIGURATION_DESCRIPTOR)usb->USB_Reserved)->wTotalLength);
     return((PUSB_CONFIGURATION_DESCRIPTOR)usb->USB_Reserved);

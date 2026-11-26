@@ -107,7 +107,11 @@ ULONG main (void)
      PENV_DATA d=&HostController->InitData;
      SetupGfxMemory(d->BufferMemAddress,d->BufferMemOffset,d->BufferMemSize);
    }
-   CreateTDCache();
+   if(!CreateTDCache())
+   {
+     kill();                // DMA memory window too small
+     return(0);
+   }
    if(HcSetup(HostController))
    {
      // card not found or wrong revision: do not go on with freed structures
@@ -246,7 +250,8 @@ ULONG main (void)
 						//======================================================================
 
 						case CMD_ALLOC_USB_SUPPORT:
-									while((mymess->IO_Data=(ULONG)AllocMem(sizeof(USB_SUPPORT),MEMF_PUBLIC|MEMF_CLEAR))==NULL);
+									if((mymess->IO_Data=(ULONG)AllocMem(sizeof(USB_SUPPORT),MEMF_PUBLIC|MEMF_CLEAR))==NULL)
+										mymess->IO_Error=ERR_USB_MEMORY_FULL;
 						break;
 						//----------------------------------------------------------------------
 						case CMD_FREE_USB_SUPPORT:
@@ -314,9 +319,24 @@ ULONG main (void)
 									{
 										// Alloca USBD Request;
 										PUSBD_REQUEST MyRequest=AllocUsbdRequest();
+										if(!MyRequest)
+										{
+											mymess->IO_Data=0;
+											mymess->IO_Error=ERR_USB_MEMORY_FULL;
+											break;
+										}
 										// Alloca Buffer I/O;
 										if(mymess->IO_Data)
+										{
 												MyRequest->USB_Buffer=AllocUsbBuffer(mymess->IO_Data);
+												if(!MyRequest->USB_Buffer)
+												{
+													FreeUsbdRequest(MyRequest);
+													mymess->IO_Data=0;
+													mymess->IO_Error=ERR_USB_MEMORY_FULL;
+													break;
+												}
+										}
 										MyRequest->USB_BufferTotalLength=mymess->IO_Data;
 										// Init Porta Messaggi;
 										//MyRequest->usb_Message.mn_ReplyPort=(struct MsgPort *)mymess->IO_Buffer[0];
@@ -375,7 +395,13 @@ ULONG main (void)
  								  else
                           	if (Endpoint->ED_Reserved[0])
  								    {
-							  	      QueueRequest(Endpoint,request);
+							  	      if(!QueueRequest(Endpoint,request))
+							  	      {
+							  	        // out of DMA memory for the TDs: report it on the
+							  	        // command, the client then does not wait for the request
+							  	        request->USB_Status=USBD_FAILED;
+							  	        mymess->IO_Error=ERR_USB_MEMORY_FULL;
+							  	      }
  								    }
 									else
 									 {

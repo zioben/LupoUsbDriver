@@ -23,7 +23,7 @@
 //void                 Set_TD_Next(PTRANSFER_DESCRIPTOR td_a,PTRANSFER_DESCRIPTOR td_b);
 //PTRANSFER_DESCRIPTOR Get_TD_Next(PTRANSFER_DESCRIPTOR td);
 
-void                 CreateTDCache();
+int                  CreateTDCache();
 void                 FreeTDCache();
 void                 InsertTD(PTRANSFER_DESCRIPTOR td_a,PTRANSFER_DESCRIPTOR td_b);
 void                 InsertTailTD(PTRANSFER_DESCRIPTOR td_a,PTRANSFER_DESCRIPTOR td_b);
@@ -38,16 +38,16 @@ void                 FreeTransferDescriptor(PTRANSFER_DESCRIPTOR td);
 
 PENDPOINT_DESCRIPTOR Get_ED_PrevED(PENDPOINT_DESCRIPTOR ED);
 void                 Set_ED_PrevED(PENDPOINT_DESCRIPTOR ED,PENDPOINT_DESCRIPTOR PrevED);
-void                 InsertEDForEndpoint(PENDPOINT_DESCRIPTOR Endpoint);
+ULONG                InsertEDForEndpoint(PENDPOINT_DESCRIPTOR Endpoint);
 PENDPOINT_DESCRIPTOR AllocateEndpoint(PHCD_DEVICE_DATA dd);
 void                 GetEndpointData(PENDPOINT_DESCRIPTOR Endpoint);
 void                 SetEndpointData(PENDPOINT_DESCRIPTOR Endpoint);
 PENDPOINT_DESCRIPTOR CreateEndpoint(ULONG type,ULONG rate,PENDPOINT_CONTROL cont,PHCD_DEVICE_DATA dd);
 void                 DeleteEndpoint(PENDPOINT_DESCRIPTOR ED);
 void                 RemoveED(PENDPOINT_DESCRIPTOR Endpoint);
-void                 HcCreateInterruptListED(PHCD_DEVICE_DATA dd);
-void                 HcCreateControlED(PHCD_DEVICE_DATA dd);
-void                 HcCreateBulkED(PHCD_DEVICE_DATA dd);
+ULONG                HcCreateInterruptListED(PHCD_DEVICE_DATA dd);
+ULONG                HcCreateControlED(PHCD_DEVICE_DATA dd);
+ULONG                HcCreateBulkED(PHCD_DEVICE_DATA dd);
 
 ULONG OpenControlPipe(PENDPOINT_DESCRIPTOR Endpoint);
 ULONG OpenBulkPipe(PENDPOINT_DESCRIPTOR Endpoint);

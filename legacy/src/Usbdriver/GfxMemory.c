@@ -311,7 +311,8 @@ char *GfxAllocMem(ULONG bytes,ULONG flags)
      if (!(mem<MyGfxBase.LargestMemory))
               return(NULL);
      // se si alloca struttura e inizializza!
-     while (!(list=AllocMem(sizeof(GfxMemoryList),MEMF_PUBLIC|MEMF_CLEAR)));
+     if (!(list=AllocMem(sizeof(GfxMemoryList),MEMF_PUBLIC|MEMF_CLEAR)))
+              return(NULL);
      list->Flags=flags;
      list->BytesUsed=bytes;
      // concatena in lista

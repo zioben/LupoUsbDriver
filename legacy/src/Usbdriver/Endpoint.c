@@ -39,11 +39,18 @@ LONG                 TD_CACHE_FREE=CACHETDSIZE;
 //  TRANSFER_DESCRIPTOR:  Alloca un megapool di TD (64*NUMTD)
 //-----------------------------------------------------------------------------
 
-void CreateTDCache()
+void FreeTDCache();
+
+int CreateTDCache()
 {
  int i;
  for(i=0;i<CACHETDSIZE;i++)
-   while (!( TD_CACHE[i]=(PTRANSFER_DESCRIPTOR)GfxAllocMem(sizeof(TRANSFER_DESCRIPTOR),MEMF_032|MEMF_CLEAR) ));
+   if (!( TD_CACHE[i]=(PTRANSFER_DESCRIPTOR)GfxAllocMem(sizeof(TRANSFER_DESCRIPTOR),MEMF_032|MEMF_CLEAR) ))
+   {
+     FreeTDCache();         // DMA memory window too small: give up cleanly
+     return(0);
+   }
+ return(1);
 // return(TD); 
 // for(i=0;i<32;i++)printf("%#X\n",TD_CACHE[i]);
 }
@@ -54,8 +61,12 @@ void FreeTDCache()
  int i;
  if(TD_CACHE)
  {
-  for(i=0;i<CACHETDSIZE;i++) 
-    GfxFreeMem((char*)TD_CACHE[i]);
+  for(i=0;i<CACHETDSIZE;i++)
+    if(TD_CACHE[i])
+    {
+      GfxFreeMem((char*)TD_CACHE[i]);
+      TD_CACHE[i]=NULL;
+    }
  }
 }
 
@@ -133,7 +144,8 @@ PTRANSFER_DESCRIPTOR AllocateTransferDescriptor()
  LONG i=TD_CACHE_NEXT;
  if(!TD_CACHE_FREE)
  {
-    while (!( TD=(PTRANSFER_DESCRIPTOR)GfxAllocMem(sizeof(TRANSFER_DESCRIPTOR),MEMF_016|MEMF_CLEAR) ));
+    if (!( TD=(PTRANSFER_DESCRIPTOR)GfxAllocMem(sizeof(TRANSFER_DESCRIPTOR),MEMF_016|MEMF_CLEAR) ))
+       return(NULL);        // caller must handle it (was: endless loop)
     TD->TD_ToBeFree=1;
     return(TD);
  }
@@ -210,9 +222,10 @@ void Set_ED_PrevED(PENDPOINT_DESCRIPTOR PrevED,PENDPOINT_DESCRIPTOR ED)
 // HCD_ENDPOINT_DESCRIPTOR: Crea e concatena un HCD_ENDPOINT_DESCRIPTOR
 //-----------------------------------------------------------------------------
 
-void InsertEDForEndpoint(PENDPOINT_DESCRIPTOR Endpoint)
+ULONG InsertEDForEndpoint(PENDPOINT_DESCRIPTOR Endpoint)
 {
-  PTRANSFER_DESCRIPTOR td;
+  PTRANSFER_DESCRIPTOR td=AllocateTransferDescriptor();   // dummy tail TD
+  if(!td) return(0);
   // inizializza l'Endpoint Descriptor
   Set_ED_FunctionAddress(Endpoint , Endpoint->ED_Control.EC_FunctionAddress);
   Set_ED_EndpointNumber( Endpoint , Endpoint->ED_Control.EC_EndpointNumber );
@@ -225,7 +238,6 @@ void InsertEDForEndpoint(PENDPOINT_DESCRIPTOR Endpoint)
   Set_ED_Carry(          Endpoint , Endpoint->ED_Control.EC_ToggleCarry);
   // Crea il Dummy Transfer Descriptor
   // Ricorda: è già inizializzato a 0
-  td=AllocateTransferDescriptor();
   Set_ED_HeadP(Endpoint,td);
   Set_ED_TailP(Endpoint,td);
   Endpoint->ED_DeviceData->IntCount[9]++;
@@ -248,6 +260,7 @@ void InsertEDForEndpoint(PENDPOINT_DESCRIPTOR Endpoint)
       Set_ED_NextED(ED,Endpoint);
   }  
 //  printfED(Endpoint);
+  return(1);
 }
 
 //-----------------------------------------------------------------------------
@@ -256,9 +269,8 @@ void InsertEDForEndpoint(PENDPOINT_DESCRIPTOR Endpoint)
 
 PENDPOINT_DESCRIPTOR AllocateEndpoint(PHCD_DEVICE_DATA dd)
 {
-  PENDPOINT_DESCRIPTOR ED=NULL;
-  while(!ED) ED=(PENDPOINT_DESCRIPTOR)GfxAllocMem(sizeof(ENDPOINT_DESCRIPTOR),MEMF_016|MEMF_CLEAR);
-  ED->ED_DeviceData=dd;
+  PENDPOINT_DESCRIPTOR ED=(PENDPOINT_DESCRIPTOR)GfxAllocMem(sizeof(ENDPOINT_DESCRIPTOR),MEMF_016|MEMF_CLEAR);
+  if(ED) ED->ED_DeviceData=dd;
   return(ED);
 }
 
@@ -311,6 +323,7 @@ PENDPOINT_DESCRIPTOR CreateEndpoint(ULONG type,ULONG rate,PENDPOINT_CONTROL cont
   if (!dd)   return(NULL);
   if (cont->EC_MaximumPacketSize==0) return(NULL);
   Endpoint=AllocateEndpoint(dd); 
+  if(!Endpoint) return(NULL);
   // setta listindex
   switch (type)
   {
@@ -450,7 +463,7 @@ void RemoveED(PENDPOINT_DESCRIPTOR Endpoint)
 // HCD_ENDPOINT_DESCRIPTOR : Crea PERIODIC e ISO Endpoint dummy
 //-----------------------------------------------------------------------------
 
-void HcCreateInterruptListED(PHCD_DEVICE_DATA dd)
+ULONG HcCreateInterruptListED(PHCD_DEVICE_DATA dd)
 {
  PENDPOINT_DESCRIPTOR ED,StaticED[ED_INTERRUPT_32ms];
  ULONG			  i,j,k;
@@ -460,6 +473,7 @@ void HcCreateInterruptListED(PHCD_DEVICE_DATA dd)
  for(i=0;i<32;i++)
  {
    ED=AllocateEndpoint(dd);
+   if(!ED) return(0);
    ED->ED_Type=Endpoint_Dummy;
    Set_ED_sKip(ED,1);
    dd->EDList[i+ED_INTERRUPT_32ms]=ED;
@@ -468,6 +482,7 @@ void HcCreateInterruptListED(PHCD_DEVICE_DATA dd)
  for(i=0;i<ED_INTERRUPT_32ms;i++)
  {
     ED=AllocateEndpoint(dd);
+    if(!ED) return(0);
     ED->ED_Type=Endpoint_Dummy;
     Set_ED_sKip(ED,1);
     StaticED[i]=ED;
@@ -482,35 +497,40 @@ void HcCreateInterruptListED(PHCD_DEVICE_DATA dd)
      k=Balance[i&0x0f]+ED_INTERRUPT_16ms;
      Set_ED_NextED(dd->EDList[j],dd->EDList[k]);
  }
+ return(1);
 }
 
 //--------------------------------------------------------------------
 // Crea un CONTROL Endpoint Dummy
 //--------------------------------------------------------------------
 
-void HcCreateControlED(PHCD_DEVICE_DATA dd)
+ULONG HcCreateControlED(PHCD_DEVICE_DATA dd)
 {
    // Crea un dummy control endpoint
    // Aggiungilo A DD->EdList
    // Aggiungilo Ai registri 
    PENDPOINT_DESCRIPTOR ED=AllocateEndpoint(dd);
+   if(!ED) return(0);
    ED->ED_Type=Endpoint_Dummy;
    Set_ED_sKip(ED,1);
    dd->EDList[ED_CONTROL]=ED;
    HcSetControlHeadED(dd,ED);
+   return(1);
 }
 
 //--------------------------------------------------------------------
 // Crea un BULK Endpoint Dummy
 //--------------------------------------------------------------------
 
-void HcCreateBulkED(PHCD_DEVICE_DATA dd)
+ULONG HcCreateBulkED(PHCD_DEVICE_DATA dd)
 {
    PENDPOINT_DESCRIPTOR ED=AllocateEndpoint(dd);
+   if(!ED) return(0);
    ED->ED_Type=Endpoint_Dummy;
    Set_ED_sKip(ED,1);
    dd->EDList[ED_BULK]=ED;
    HcSetBulkHeadED(dd,ED);
+   return(1);
 }
 
 //-----------------------------------------------------------------------------
@@ -520,7 +540,7 @@ void HcCreateBulkED(PHCD_DEVICE_DATA dd)
 ULONG OpenControlPipe(PENDPOINT_DESCRIPTOR Endpoint)
 {
   if(Endpoint->ED_ListIndex!=ED_CONTROL) return(0);
-  InsertEDForEndpoint(Endpoint);
+  return(InsertEDForEndpoint(Endpoint));
 }
 
 //-----------------------------------------------------------------------------
@@ -530,7 +550,7 @@ ULONG OpenControlPipe(PENDPOINT_DESCRIPTOR Endpoint)
 ULONG OpenBulkPipe(PENDPOINT_DESCRIPTOR Endpoint)
 {
   if(Endpoint->ED_ListIndex!=ED_BULK) return(0);
-  InsertEDForEndpoint(Endpoint);
+  return(InsertEDForEndpoint(Endpoint));
 }
 
 //-----------------------------------------------------------------------------
@@ -637,7 +657,12 @@ ULONG OpenInterruptIsoPipe(PENDPOINT_DESCRIPTOR ED)
     }
     else return(0);
     ED->ED_ListIndex=WhichList;
-    InsertEDForEndpoint(ED);
+    if(!InsertEDForEndpoint(ED))
+    {
+       dd->ListBandwidth[WhichList]-=ED->ED_Bandwidth;   // undo the reservation
+       dd->AviableBandwidth+=ED->ED_Bandwidth;
+       return(0);
+    }
     return(1);
   }
   return(0);
@@ -679,9 +704,8 @@ void  ClosePipe(PENDPOINT_DESCRIPTOR Endpoint)
 
 PUSBD_REQUEST AllocUsbdRequest()
 {
-  PUSBD_REQUEST req;
-  while(!(req=(PUSBD_REQUEST)GfxAllocMem(sizeof(USBD_REQUEST),MEMF_CLEAR)));
-  req->USB_MaxIntDelay=MAXINTDELAY;
+  PUSBD_REQUEST req=(PUSBD_REQUEST)GfxAllocMem(sizeof(USBD_REQUEST),MEMF_CLEAR);
+  if(req) req->USB_MaxIntDelay=MAXINTDELAY;
   return(req);
 }
 
@@ -726,9 +750,52 @@ void FreeUsbBuffer(char *Buffer)
 //  INIZIALIZZA UNO SETUP TD
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+//  TDs reserved for the request being queued: all the TDs a request needs
+//  are allocated before touching the endpoint, so that running out of DMA
+//  memory in the middle cannot leave a half-built TD chain on the ED.
+//-----------------------------------------------------------------------------
+
+static PTRANSFER_DESCRIPTOR ReservedTD=NULL;
+
+static void ReleaseReservedTDs(void)
+{
+  PTRANSFER_DESCRIPTOR td;
+  while((td=ReservedTD))
+  {
+    ReservedTD=td->TD_NextTD;
+    td->TD_NextTD=NULL;
+    FreeTransferDescriptor(td);
+  }
+}
+
+static int ReserveTDs(ULONG n)
+{
+  while(n--)
+  {
+    PTRANSFER_DESCRIPTOR td=AllocateTransferDescriptor();
+    if(!td)
+    {
+      ReleaseReservedTDs();
+      return(0);
+    }
+    td->TD_NextTD=ReservedTD;
+    ReservedTD=td;
+  }
+  return(1);
+}
+
+static PTRANSFER_DESCRIPTOR TakeReservedTD(void)
+{
+  PTRANSFER_DESCRIPTOR td=ReservedTD;
+  ReservedTD=td->TD_NextTD;
+  td->TD_NextTD=NULL;
+  return(td);
+}
+
 PTRANSFER_DESCRIPTOR QueueSetupRequest(PENDPOINT_DESCRIPTOR endpoint, PUSBD_REQUEST request, PTRANSFER_DESCRIPTOR TD)
 {
- PTRANSFER_DESCRIPTOR NEXTTD=AllocateTransferDescriptor();
+ PTRANSFER_DESCRIPTOR NEXTTD=TakeReservedTD();
  endpoint->ED_DeviceData->IntCount[10]++;
  TD->TD_UsbdRequest=request;
  TD->TD_Endpoint=endpoint;
@@ -753,7 +820,7 @@ PTRANSFER_DESCRIPTOR QueueSetupRequest(PENDPOINT_DESCRIPTOR endpoint, PUSBD_REQU
 
 PTRANSFER_DESCRIPTOR QueueStatusRequest(PENDPOINT_DESCRIPTOR endpoint, PUSBD_REQUEST request,PTRANSFER_DESCRIPTOR TD)
 {
- PTRANSFER_DESCRIPTOR NEXTTD=AllocateTransferDescriptor();
+ PTRANSFER_DESCRIPTOR NEXTTD=TakeReservedTD();
  endpoint->ED_DeviceData->IntCount[10]++; 
  TD->TD_Endpoint=endpoint;
  TD->TD_UsbdRequest=request;
@@ -817,7 +884,7 @@ PTRANSFER_DESCRIPTOR QueueNormalRequest(PENDPOINT_DESCRIPTOR endpoint, PUSBD_REQ
          Set_TD_Rounding(TD,0);  // deve restare 0
      Set_TD_DelayInterrupt(TD,7);
      Set_TD_ConditionCode(TD,NotAccessed);
-     NEXTTD=AllocateTransferDescriptor();
+     NEXTTD=TakeReservedTD();
      endpoint->ED_DeviceData->IntCount[10]++;
      Set_TD_NextTD(TD,NEXTTD);
      TD->TD_NextTD=NEXTTD;
@@ -849,7 +916,15 @@ char QueueRequest(PENDPOINT_DESCRIPTOR endpoint, PUSBD_REQUEST request)
 {
  PHCD_DEVICE_DATA devicedata=endpoint->ED_DeviceData;
  PTRANSFER_DESCRIPTOR TD; 
+ ULONG mps,need;
  if(endpoint==NULL || endpoint->ED_ListIndex==ED_EOF) return(0);
+ // isochronous transfers are not implemented (QueueIsoRequest is empty)
+ if(endpoint->ED_Type==Endpoint_Isochronous) return(0);
+ // one new TD per packet, plus SETUP and STATUS for control transfers
+ mps=endpoint->ED_Control.EC_MaximumPacketSize;
+ need=(mps && request->USB_BufferLength) ? (request->USB_BufferLength+mps-1)/mps : 0;
+ if(endpoint->ED_Type==Endpoint_Control) need+=2;
+ if(!ReserveTDs(need)) return(0);
 
  request->USB_BytesCopied=0;
  request->USB_Status=USBD_NOT_DONE;
@@ -875,6 +950,7 @@ char QueueRequest(PENDPOINT_DESCRIPTOR endpoint, PUSBD_REQUEST request)
 
  request->USB_TailTD=TD;
  Set_ED_TailP(endpoint,TD->TD_NextTD);
+ ReleaseReservedTDs();      // nothing should be left; just in case
 
  switch (endpoint->ED_Type)
  {

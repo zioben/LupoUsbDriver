@@ -381,7 +381,7 @@ int OpenAll()
 {
 	if((WindowBase)&&(ButtonBase)&&(LayoutBase)&&(LabelBase)&&(IntegerBase))
 	{
-	 while (!(MyPort=CreateMsgPort()));
+	 if (!(MyPort=CreateMsgPort())) return(0);
 	 return(1);
 	}
 	return(0);

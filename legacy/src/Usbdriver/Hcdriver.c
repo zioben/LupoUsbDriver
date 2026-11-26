@@ -39,9 +39,8 @@ extern struct PciDevice *HcDevice;
 
 ULONG HcCreateHccaArea()
 {
-   char *addr=NULL;
-   while (!(addr=GfxAllocMem(256,MEMF_256|MEMF_CLEAR)));
-   return((ULONG)addr);
+   char *addr=GfxAllocMem(256,MEMF_256|MEMF_CLEAR);
+   return((ULONG)addr);       // 0 if the DMA memory window is full
 }
 
 //---------------------------------------------------------------------------
@@ -61,7 +60,7 @@ void HcKillHccaArea(PHCD_DEVICE_DATA hc)
 struct MsgPort* HcCreateMessagePort(char *NamePort)
 {
  struct MsgPort* myport;
- while ((myport=CreatePort(NamePort,0))==NULL);
+ myport=CreatePort(NamePort,0);    // NULL on failure
  return(myport);
 }
 
@@ -83,7 +82,7 @@ void HcKillMessagePort(PHCD_DEVICE_DATA hc)
 PHCD_DEVICE_DATA HcCreateHc(void)
 {
  PHCD_DEVICE_DATA myhc;
- while (!(myhc=AllocMem(sizeof(HCD_DEVICE_DATA),MEMF_PUBLIC|MEMF_CLEAR)));
+ myhc=AllocMem(sizeof(HCD_DEVICE_DATA),MEMF_PUBLIC|MEMF_CLEAR);    // NULL on failure
  return(myhc);
 }
 
@@ -131,7 +130,9 @@ PHCD_DEVICE_DATA HcCreateDeviceData(void)
   if (env)
   {
     Happo=HcCreateHc();
+    if(!Happo) { Close(env); return(NULL); }
     Happo->HcMessagePort     =HcCreateMessagePort(UsbKernelHcPortName);
+    if(!Happo->HcMessagePort) { HcKillHc(Happo); Close(env); return(NULL); }
     //Happo->RootHubMessagePort=HcCreateMessagePort(UsbKernelRhPortName);
     FRead(env,&Happo->InitData,1,sizeof(ENV_DATA));
     Close(env);
@@ -296,13 +297,12 @@ ULONG HcGetAviableBandwidth(PHCD_DEVICE_DATA dd)
 // Create Base Lists
 //-----------------------------------------------------------------------------
 
-void HcListSetup(PHCD_DEVICE_DATA hc)
+ULONG HcListSetup(PHCD_DEVICE_DATA hc)
 {
   hc->HCCA=(PHCCA_BLOCK)HcCreateHccaArea();
+  if(!hc->HCCA) return(0);
   HcSetHCCA(hc,(ULONG)hc->HCCA);
-  HcCreateBulkED(hc);
-  HcCreateControlED(hc);
-  HcCreateInterruptListED(hc);
+  return(HcCreateBulkED(hc) && HcCreateControlED(hc) && HcCreateInterruptListED(hc));
 }
 
 
@@ -324,7 +324,7 @@ ULONG HcSetup(PHCD_DEVICE_DATA hc)
    HcSetState(hc,HC_USB_SUSPEND);
    Delay(10);
    HcInterruptRoutingDisable(hc);
-   HcListSetup(hc);
+   if(!HcListSetup(hc)) return(ERR_USB_MEMORY_FULL);
    HcSetCBSR(hc,hc->InitData.Cbsr);
    HcSetFrameInterval(hc,hc->InitData.FrameInterval);
    HcSetPeriodicStart(hc,(UWORD)(hc->InitData.FrameInterval*0.9));
