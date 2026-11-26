@@ -102,11 +102,7 @@ $(OUT)/C/UsbStack: $(O)/obj/UsbStack.o $(LIBCODE_OBJ)
 	@mkdir -p $(dir $@)
 	$(AMIGA_CC) -m68020 -noixemul -o $@ $^ -lamiga
 
-$(O)/obj/glue/roothub_data.o: $(L)/glue/roothub_data.c $(INC)/.stamp
-	@mkdir -p $(dir $@)
-	$(AMIGA_CC) $(CFLAGS) -c -o $@ $< 2>> $(O)/warnings.log
-
-$(OUT)/C/UsbRootHub: $(O)/obj/RootHub.o $(O)/obj/RootHubClass.o $(O)/obj/glue/roothub_data.o $(O)/obj/Assembly/Asmhc.o
+$(OUT)/C/UsbRootHub: $(O)/obj/RootHub.o $(O)/obj/RootHubClass.o $(O)/obj/Assembly/Asmhc.o
 	@mkdir -p $(dir $@)
 	$(AMIGA_CC) -m68020 -noixemul -o $@ $^ -lamiga
 

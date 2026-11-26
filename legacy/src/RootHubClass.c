@@ -48,7 +48,21 @@ UBYTE GetBusState(PUSB_SUPPORT Req,
  return(3);
 }
 
-extern HUB_DESCRIPTOR RHub;
+// Defined here: before it was only in RootHubConstructors.h, which no
+// compiled source includes any more (and which no longer compiles).
+// Initializer as in RootHubConstructors.h; most fields are filled from the
+// OHCI registers by GetHubDescriptor().
+HUB_DESCRIPTOR RHub=
+{
+ sizeof(HUB_DESCRIPTOR),
+ 0x29,
+ 0,
+ 0,
+ 0,
+ 250,
+ 0,
+ 0
+};
 
 PHUB_DESCRIPTOR GetHubDescriptor(PUSB_SUPPORT Req,
 		                 PENDPOINT_DESCRIPTOR   ed,
