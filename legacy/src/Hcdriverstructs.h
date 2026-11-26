@@ -391,12 +391,12 @@ typedef struct _HCD_DEVICE_DATA {
    char							*DeviceName;
    char							*VendorName;
    ENV_DATA						InitData;
-   PTRANSFER_DESCRIPTOR   	DoneQueue1Head;
+   PTRANSFER_DESCRIPTOR volatile DoneQueue1Head;   // shared with the interrupt
    PTRANSFER_DESCRIPTOR   	DoneQueue1Tail;
-   ULONG						  	DoneQueue1Locked;
-   PTRANSFER_DESCRIPTOR   	DoneQueue2Head;
+   volatile ULONG				  	DoneQueue1Locked;
+   PTRANSFER_DESCRIPTOR volatile DoneQueue2Head;   // shared with the interrupt
    PTRANSFER_DESCRIPTOR   	DoneQueue2Tail;
-   ULONG						  	DoneQueue2Locked;
+   volatile ULONG				  	DoneQueue2Locked;
 }HCD_DEVICE_DATA,*PHCD_DEVICE_DATA;
 
 //-----------------------------------------------------------------------------

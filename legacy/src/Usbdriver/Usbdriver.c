@@ -30,7 +30,7 @@ struct  Task*      ThisTask=NULL; /* port: was initialized with FindTask before 
 
 PHCD_DEVICE_DATA   HostController;
 ROOT_HUB_MESSAGE   RootHubMess;
-ULONG 				 AvvisaCambioStatoRootHub=0;
+volatile ULONG 			 AvvisaCambioStatoRootHub=0;   // written by the interrupt handler
 
 
 #define MAXDELAY 10

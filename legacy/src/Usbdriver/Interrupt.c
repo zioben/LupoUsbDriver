@@ -23,7 +23,7 @@
 
 extern struct PciDevice *HcDevice;	  
 extern ROOT_HUB_MESSAGE RootHubMess;
-extern ULONG AvvisaCambioStatoRootHub;
+extern volatile ULONG AvvisaCambioStatoRootHub;
 
 void InsertTail(PTRANSFER_DESCRIPTOR Head,PTRANSFER_DESCRIPTOR Tail,PTRANSFER_DESCRIPTOR HeadBlock)
 {
@@ -115,15 +115,14 @@ void RemoveMediatorPciInterrupt(PHCD_DEVICE_DATA devicedata)
 
 
 #define INTMASKENABLE 	0x7B0000C0
-ULONG ContextInfo,Frame,i;
-PTRANSFER_DESCRIPTOR TD,LASTTD,TMPTD;
 
 
 char ProcessInterrupt(PHCD_DEVICE_DATA devicedata __asm("a1"))
 {
 
-  //ULONG ContextInfo,Frame,i;
-  //PTRANSFER_DESCRIPTOR TD,LASTTD,TMPTD;
+  // working variables are local: globals were shared with the main task
+  ULONG ContextInfo,Frame,i;
+  PTRANSFER_DESCRIPTOR TD,LASTTD,TMPTD;
   // Ricorda gli interrupt
   ContextInfo = devicedata->HC->HcInterruptStatus & INTMASKENABLE;//devicedata->HC->HcInterruptEnable;
   // The Mediator interrupt chain is shared with the other PCI cards:
