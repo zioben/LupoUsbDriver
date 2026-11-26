@@ -37,6 +37,22 @@ ULONG              IrqSigMask=0;   // signal sent by the interrupt handler to th
 #define MAXDELAY 10
 
 //-------------------------------------
+//   Is the message still waiting in the port? (RootHubMess is a single
+//   static message: putting it twice in the same list corrupts the list)
+//-------------------------------------
+
+static int MessageQueued(struct MsgPort *port, struct Message *msg)
+{
+  struct Node *n;
+  int found=0;
+  Forbid();
+  for(n=port->mp_MsgList.lh_Head; n->ln_Succ; n=n->ln_Succ)
+    if(n==&msg->mn_Node) { found=1; break; }
+  Permit();
+  return(found);
+}
+
+//-------------------------------------
 //   Dealloca la memoria
 //-------------------------------------
 
@@ -118,7 +134,8 @@ ULONG main (void)
 			while(AvvisaCambioStatoRootHub)
 			{
 				AvvisaCambioStatoRootHub=0;
-				if (HostController->RootHubMessagePort)
+				if (HostController->RootHubMessagePort &&
+				    !MessageQueued(HostController->RootHubMessagePort,(struct Message*)&RootHubMess))
 					PutMsg(HostController->RootHubMessagePort,(struct Message*)&RootHubMess);
 			}
          if(HostController->DoneQueue1Head)

@@ -148,14 +148,23 @@ void ProcessPort(ULONG PortStatus,UBYTE i)
 void ProcessHub()
 {
   UBYTE i,Esci=0;
-  PROOT_HUB_MESSAGE HubMess;
+  PROOT_HUB_MESSAGE HubMessShared;
+  ROOT_HUB_MESSAGE  HubCopy;
+  PROOT_HUB_MESSAGE HubMess=&HubCopy;
   while (!Esci)
   {
-    HubMess=(PROOT_HUB_MESSAGE)GetMsg(RH_Supp->UserPort);
+    HubMessShared=(PROOT_HUB_MESSAGE)GetMsg(RH_Supp->UserPort);
 
-    if  (HubMess==NULL)Esci=1;
+    if  (HubMessShared==NULL)Esci=1;
     else
     {
+       // The kernel's interrupt handler keeps updating the message: take a
+       // consistent copy and reset the change bits atomically, then work
+       // on the copy.
+       Disable();
+       HubCopy=*HubMessShared;
+       if (HubMessShared->Status_Change!=0xFFFF) HubMessShared->Status_Change=0;
+       Enable();
        if  ((HubMess->Status_Change==0xFFFF))
        {
          Esci=1;
