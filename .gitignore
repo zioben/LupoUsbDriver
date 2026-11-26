@@ -1,0 +1,6 @@
+# Build output (see Makefile)
+/build/
+# External SDKs and documentation that must not be redistributed (Amiga SDK, RKM, ...)
+/third_party/
+# Python virtualenvs used for vamos
+/.venv/
