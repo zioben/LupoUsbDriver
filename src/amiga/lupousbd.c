@@ -40,13 +40,27 @@ static void log_to_console(const char *line)
 /* LOG=file: every line is appended and the file closed at once, so the log
  * survives a hang or a crash (used by the emulator test). */
 static const char *log_file;
+static u32 log_t0;
 
 static void log_to_file(const char *line)
 {
+    char stamp[16];
     BPTR fh = Open((CONST_STRPTR)log_file, MODE_READWRITE);
     if (!fh)
         return;
     Seek(fh, 0, OFFSET_END);
+    {
+        /* elapsed milliseconds since start, to measure the emulator speed */
+        u32 t = os_time_ms() - log_t0;
+        int n = 0, i;
+        char d[12];
+        do { d[n++] = (char)('0' + t % 10); t /= 10; } while (t && n < 11);
+        for (i = 0; i < 8 - n; i++) stamp[i] = ' ';
+        for (; n; ) stamp[i++] = d[--n];
+        stamp[i++] = ' ';
+        stamp[i] = 0;
+    }
+    Write(fh, (APTR)stamp, (LONG)lu_strlen(stamp));
     Write(fh, (APTR)line, (LONG)lu_strlen(line));
     Write(fh, (APTR)"\n", 1);
     Close(fh);
@@ -81,12 +95,14 @@ int main(void)
     os_log_hook = log_to_console;
     if (args[ARG_LOG]) {
         log_file = (const char *)args[ARG_LOG];
+        log_t0 = 0;                     /* set once the timer is open */
         os_log_hook = log_to_file;
     }
     os_log_level = args[ARG_VERBOSE] ? LU_LOG_DEBUG : LU_LOG_INFO;
 
     if (!amiga_backend_open(&be, device, unit))
         goto out;
+    log_t0 = os_time_ms();
     if (!args[ARG_NOINPUT] && !input_sink_open(&in))
         LU_WARN("input.device not available, events will not be injected");
 

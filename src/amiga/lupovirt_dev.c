@@ -45,7 +45,7 @@
 #define REVISION    1
 #define VSTRING     "lupovirt.device 0.1 (26.11.2026) LupoUsbDriver virtual USB host"
 #define NUNITS      2
-#define TICK_US     2000
+#define TICK_US     5000    /* unit task tick; HID polls every 10 ms */
 #define ABORT_MARK  ((APTR)1)
 #define TAKEN_MARK  ((APTR)2)
 
@@ -260,6 +260,8 @@ static void unit_task(void)
     tmask = 1UL << vu->tport->mp_SigBit;
 
     virtbus_init(&vu->vb, 2);
+    vu->vb.manual_clock = 1;            /* advanced once per loop below */
+    virtbus_tick(&vu->vb, os_time_ms());
     build_topology(vu);
     vu->hcd = lvhc_create(&vu->vb.bus);
     if (!vu->hcd)
@@ -301,6 +303,7 @@ static void unit_task(void)
         }
         if (sigs & vu->abort_mask)
             process_aborts(vu);
+        virtbus_tick(&vu->vb, os_time_ms());
         demo_tick(vu);
         hcd_poll(vu->hcd);
     }
