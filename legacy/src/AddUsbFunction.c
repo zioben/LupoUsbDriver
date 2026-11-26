@@ -46,7 +46,7 @@ void main(int argc,char **argv)
  if (FunctionNumber==1) (printf("Add RootHub  \n",FunctionNumber));
  if(OpenAll() & FunctionNumber)
  {
-   if(FunctionNumber==1) Execute("run c:UsbRootHub",NULL,NULL);
+   if(FunctionNumber==1) Execute("run c:UsbRootHub",0,0);   // input/output are BPTRs
    if(FunctionNumber==0) printf("BUG Detecting Free Address!!!!\n");
    if(FunctionNumber>1)
    {

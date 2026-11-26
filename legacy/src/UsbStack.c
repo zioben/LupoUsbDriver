@@ -300,7 +300,7 @@ void ExecuteCommand(char* Command,UBYTE val)
  strcpy(Buffer,Command);
  strcat(Buffer," ");
  strcat(Buffer,Number);
- Execute(Buffer,NULL,NULL);
+ Execute(Buffer,0,0);   // input/output are BPTRs
 }
 
 

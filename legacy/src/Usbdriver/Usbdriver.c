@@ -4,6 +4,7 @@
 #include <pragma/dos_lib.h>
 #include <pragma/intuition_lib.h>
 #include <clib/alib_protos.h>
+#include <clib/graphics_protos.h>   // WaitTOF() (fallback when no signal is free)
 
 #include <libraries/pci.h>
 #include <clib/pci_lib_protos.h>
