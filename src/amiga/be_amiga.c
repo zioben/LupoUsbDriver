@@ -17,41 +17,41 @@ static int map_status(BYTE err)
         return XS_OK;
     if (err == IOERR_ABORTED)
         return XS_ABORTED;
-    if (err > 0 && err <= UHIOERR_OUTOFMEMORY)
-        return err;                     /* UHIOERR_* == XS_* */
+    if (err > 0 && err <= LUHIOERR_OUTOFMEMORY)
+        return err;                     /* LUHIOERR_* == XS_* */
     return XS_HOSTERROR;
 }
 
 static int a_submit(void *ctx, struct UsbXfer *x)
 {
     struct AmigaBackend *b = ctx;
-    struct IOUsbHWReq *io = (struct IOUsbHWReq *)CreateIORequest(b->port, sizeof(struct IOUsbHWReq));
+    struct LuHwReq *io = (struct LuHwReq *)CreateIORequest(b->port, sizeof(struct LuHwReq));
     if (!io) {
         x->status = XS_NOMEM;           /* reported synchronously */
         if (x->done)
             x->done(x);
         return 0;
     }
-    io->iouh_Req.io_Device = b->ctl->iouh_Req.io_Device;
-    io->iouh_Req.io_Unit = b->ctl->iouh_Req.io_Unit;
-    io->iouh_Req.io_Command = x->type == XT_CONTROL ? UHCMD_CONTROLXFER :
-                              x->type == XT_INT ? UHCMD_INTXFER :
-                              x->type == XT_BULK ? UHCMD_BULKXFER : UHCMD_ISOXFER;
-    io->iouh_Flags = x->flags & (UHFF_LOWSPEED | UHFF_NOSHORTPKT | UHFF_NAKTIMEOUT | UHFF_ALLOWRUNTPKTS);
-    io->iouh_Dir = x->dir == XD_IN ? UHDIR_IN : UHDIR_OUT;
-    io->iouh_DevAddr = x->devaddr;
-    io->iouh_Endpoint = x->endpoint;
-    io->iouh_MaxPktSize = x->maxpkt;
-    io->iouh_Length = x->length;
-    io->iouh_Data = x->data;
-    io->iouh_Interval = x->interval;
-    io->iouh_NakTimeout = x->nak_timeout;
-    lu_memcpy(&io->iouh_SetupData, x->setup, 8);    /* already little endian */
-    io->iouh_UserData = x;
+    io->lhr_Req.io_Device = b->ctl->lhr_Req.io_Device;
+    io->lhr_Req.io_Unit = b->ctl->lhr_Req.io_Unit;
+    io->lhr_Req.io_Command = x->type == XT_CONTROL ? LUHCMD_CONTROLXFER :
+                              x->type == XT_INT ? LUHCMD_INTXFER :
+                              x->type == XT_BULK ? LUHCMD_BULKXFER : LUHCMD_ISOXFER;
+    io->lhr_Flags = x->flags & (LUHF_LOWSPEED | LUHF_NOSHORTPKT | LUHF_NAKTIMEOUT | LUHF_ALLOWRUNTPKTS);
+    io->lhr_Dir = x->dir == XD_IN ? LUHDIR_IN : LUHDIR_OUT;
+    io->lhr_DevAddr = x->devaddr;
+    io->lhr_Endpoint = x->endpoint;
+    io->lhr_MaxPktSize = x->maxpkt;
+    io->lhr_Length = x->length;
+    io->lhr_Data = x->data;
+    io->lhr_Interval = x->interval;
+    io->lhr_NakTimeout = x->nak_timeout;
+    lu_memcpy(&io->lhr_SetupData, x->setup, 8);    /* already little endian */
+    io->lhr_UserData = x;
     x->be_priv = io;
     x->status = XS_PENDING;
     b->inflight++;
-    SendIO(&io->iouh_Req);
+    SendIO(&io->lhr_Req);
     return 1;
 }
 
@@ -59,19 +59,19 @@ static int a_abort(void *ctx, struct UsbXfer *x)
 {
     (void)ctx;
     if (x->status == XS_PENDING && x->be_priv)
-        AbortIO(&((struct IOUsbHWReq *)x->be_priv)->iouh_Req);
+        AbortIO(&((struct LuHwReq *)x->be_priv)->lhr_Req);
     return 1;
 }
 
 static void drain(struct AmigaBackend *b)
 {
-    struct IOUsbHWReq *io;
-    while ((io = (struct IOUsbHWReq *)GetMsg(b->port)) != NULL) {
-        struct UsbXfer *x = io->iouh_UserData;
-        x->actual = io->iouh_Actual;
-        x->status = map_status(io->iouh_Req.io_Error);
+    struct LuHwReq *io;
+    while ((io = (struct LuHwReq *)GetMsg(b->port)) != NULL) {
+        struct UsbXfer *x = io->lhr_UserData;
+        x->actual = io->lhr_Actual;
+        x->status = map_status(io->lhr_Req.io_Error);
         x->be_priv = NULL;
-        DeleteIORequest(&io->iouh_Req);
+        DeleteIORequest(&io->lhr_Req);
         b->inflight--;
         if (x->done)
             x->done(x);
@@ -104,10 +104,10 @@ static void a_wait(void *ctx, u32 ms)
 static void a_bus_reset(void *ctx)
 {
     struct AmigaBackend *b = ctx;
-    b->ctl->iouh_Req.io_Command = UHCMD_USBRESET;
-    DoIO(&b->ctl->iouh_Req);
-    b->ctl->iouh_Req.io_Command = UHCMD_USBOPER;
-    DoIO(&b->ctl->iouh_Req);
+    b->ctl->lhr_Req.io_Command = LUHCMD_USBRESET;
+    DoIO(&b->ctl->lhr_Req);
+    b->ctl->lhr_Req.io_Command = LUHCMD_USBOPER;
+    DoIO(&b->ctl->lhr_Req);
 }
 
 const struct UsbdBackend usbd_amiga_backend = { a_submit, a_abort, a_wait, a_bus_reset };
@@ -124,8 +124,8 @@ int amiga_backend_open(struct AmigaBackend *b, const char *device, ULONG unit)
         return 0;
     b->timer_open = 1;
     TimerBase = b->treq->tr_node.io_Device;
-    b->ctl = (struct IOUsbHWReq *)CreateIORequest(b->port, sizeof(struct IOUsbHWReq));
-    if (!b->ctl || OpenDevice((CONST_STRPTR)device, unit, &b->ctl->iouh_Req, 0)) {
+    b->ctl = (struct LuHwReq *)CreateIORequest(b->port, sizeof(struct LuHwReq));
+    if (!b->ctl || OpenDevice((CONST_STRPTR)device, unit, &b->ctl->lhr_Req, 0)) {
         LU_ERR("cannot open %s unit %u", device, (u32)unit);
         return 0;
     }
@@ -138,9 +138,9 @@ void amiga_backend_close(struct AmigaBackend *b)
     while (b->inflight)                 /* every request must come back */
         a_wait(b, 10);
     if (b->opened)
-        CloseDevice(&b->ctl->iouh_Req);
+        CloseDevice(&b->ctl->lhr_Req);
     if (b->ctl)
-        DeleteIORequest(&b->ctl->iouh_Req);
+        DeleteIORequest(&b->ctl->lhr_Req);
     if (b->timer_open)
         CloseDevice(&b->treq->tr_node);
     if (b->treq)

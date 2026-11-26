@@ -89,6 +89,8 @@ Osservazioni:
 
 ### 1.3 Bug confermati e nuovi rilievi
 
+> **Stato (fase F2, novembre 2026):** i bug #1–#19, #23, #24, #27–#34 sono corretti nel porting in `legacy/src`, uno per commit (`legacy/README.md`). #20, #21, #22 e #25 sono scelte di architettura, risolte dal nuovo stack.
+
 Bug già noti, tutti confermati:
 
 | # | File | Problema |
@@ -123,6 +125,9 @@ Nuovi rilievi:
 | 23 | `UsbStack.c` | Nessun ritardo di recupero dopo `SET_ADDRESS` (2 ms da specifica). Enumerazione sincrona dentro il loop dei messaggi dello stack | Bassa |
 | 24 | `UsbMouse.c` | Indirizzo della funzione cablato (`FUNCTIONADDRESS 2`). L'endpoint 1 e l'MPS 8 sono presunti invece di essere letti dal configuration descriptor | Bassa |
 | 25 | prefs | `ENV:mediator/lupousb.prefs` è il dump binario di una struct (`ENV_DATA`). VendorID/DeviceID e la finestra di memoria della scheda grafica si impostano a mano | Bassa |
+| 26 | `LupoUsbLibrary.fd` | `SetInterfaceFeature` dichiara 4 registri per 5 argomenti (manca `d1`): chiamata tramite la libreria, la funzione riceve un valore casuale. Emerso col porting a gcc e già corretto in `legacy/` | Media |
+| 27 | `Usbdriver.c` | `IO_Command` è `UWORD` e `CMD_KILL_USB` vale `-1`: `case CMD_KILL_USB` non corrisponde mai, quindi il kernel non si chiude con `KillHost` | Media |
+| 28 | `RootHubClass.c` | `RHub` non è definito in nessun sorgente compilato (solo in `RootHubConstructors.h`, non più incluso): i sorgenti attuali non si linkano senza un'aggiunta | Bassa |
 
 ### 1.4 Cosa c'è di buono
 

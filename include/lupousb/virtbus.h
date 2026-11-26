@@ -15,8 +15,11 @@ struct VirtBus {
     HwIrqHandler irq_handler;
     void *irq_data;
     u8 removed;                 /* simulate card removal */
+    u8 manual_clock;            /* 1: the owner calls virtbus_tick(); accesses do not read the clock */
 };
 
 void virtbus_init(struct VirtBus *vb, u8 nports);
+/* With manual_clock: advance the simulated chip to 'now' (once per loop). */
+void virtbus_tick(struct VirtBus *vb, u32 now);
 
 #endif /* LUPOUSB_VIRTBUS_H */

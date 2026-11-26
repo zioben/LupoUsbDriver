@@ -18,11 +18,16 @@ static void check_irq(struct VChip *c, u8 newbits)
         c->raise_irq(c->irq_ctx);
 }
 
+/* Like a real interrupt line: the owner is notified only when a status bit
+ * goes from 0 to 1, not again while it is still pending. (Raising it at
+ * every register access kept the lupovirt.device unit task, priority 5,
+ * waking itself up forever and starved the USB stack task.) */
 static void set_int(struct VChip *c, u8 bits)
 {
     u8 newbits = (u8)(bits & ~c->intstat);
     c->intstat |= bits;
-    check_irq(c, newbits ? newbits : bits);
+    if (newbits)
+        check_irq(c, newbits);
 }
 
 void vchip_init(struct VChip *c, u8 nports)
@@ -62,9 +67,12 @@ void vchip_advance(struct VChip *c, u32 now)
     for (i = 0; i < c->nports; i++)
         changed |= vport_tick(&c->port[i], now);
     tick_tree(c->port, c->nports, now);
-    for (i = 0; i < c->nports; i++)
-        if (c->port[i].change)
+    /* only NEW change bits raise the port interrupt */
+    for (i = 0; i < c->nports; i++) {
+        if (c->port[i].change & ~c->port_seen[i])
             changed = 1;
+        c->port_seen[i] = c->port[i].change;
+    }
     if (changed)
         set_int(c, LVHC_INT_PORT);
     if (c->ctrl & LVHC_CTRL_ENABLE)

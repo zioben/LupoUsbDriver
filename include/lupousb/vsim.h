@@ -89,6 +89,7 @@ struct VChip {
     u8   fifoptr;
     u8   nports;
     struct VPort port[LVHC_MAX_PORTS];
+    u16  port_seen[LVHC_MAX_PORTS];  /* change bits already signalled */
     u32  now;
     u32  last_ms;
     u16  frame;

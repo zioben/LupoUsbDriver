@@ -18,8 +18,17 @@
 static struct VChip *chip_of(struct HwBus *b)
 {
     struct VirtBus *vb = b->priv;
-    vchip_advance(&vb->chip, os_time_ms());
+    /* Reading the clock at every register access is cheap on the host but
+     * expensive on a 68k (GetSysTime() each time): an Amiga owner advances
+     * the chip once per loop with virtbus_tick() instead. */
+    if (!vb->manual_clock)
+        vchip_advance(&vb->chip, os_time_ms());
     return &vb->chip;
+}
+
+void virtbus_tick(struct VirtBus *vb, u32 now)
+{
+    vchip_advance(&vb->chip, now);
 }
 
 static u8 vb_read8(struct HwBus *b, u32 reg) { return vchip_read(chip_of(b), (u8)reg); }

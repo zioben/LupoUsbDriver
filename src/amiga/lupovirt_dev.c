@@ -2,7 +2,7 @@
  * LupoUsbDriver - Layer L2: lupovirt.device
  *
  * An Exec device implementing the usbhardware.device interface
- * (devices/usbhardware.h) on top of the L1 LVHC driver and the L0 virtual
+ * (request layout: include/lupousb/hwreq.h) on top of the L1 LVHC driver and the L0 virtual
  * bus. The "hardware" behind it is the software model of the LVHC chip with
  * simulated USB devices attached:
  *
@@ -29,7 +29,7 @@
 #include <exec/execbase.h>
 #include <dos/dos.h>
 #include <devices/timer.h>
-#include <devices/usbhardware.h>
+#include "lupousb/hwreq.h"
 #include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <clib/alib_protos.h>
@@ -45,7 +45,7 @@
 #define REVISION    1
 #define VSTRING     "lupovirt.device 0.1 (26.11.2026) LupoUsbDriver virtual USB host"
 #define NUNITS      2
-#define TICK_US     2000
+#define TICK_US     5000    /* unit task tick; HID polls every 10 ms */
 #define ABORT_MARK  ((APTR)1)
 #define TAKEN_MARK  ((APTR)2)
 
@@ -99,97 +99,97 @@ static void hcd_wake(void *ctx)
 static BYTE map_error(int st)
 {
     if (st >= XS_OK && st <= XS_NOMEM)
-        return (BYTE)st;                /* same values as UHIOERR_* */
+        return (BYTE)st;                /* same values as LUHIOERR_* */
     if (st == XS_ABORTED)
         return IOERR_ABORTED;
-    return UHIOERR_HOSTERROR;
+    return LUHIOERR_HOSTERROR;
 }
 
-static void reply(struct IOUsbHWReq *io)
+static void reply(struct LuHwReq *io)
 {
-    io->iouh_DriverPrivate1 = NULL;
-    io->iouh_DriverPrivate2 = NULL;
-    ReplyMsg(&io->iouh_Req.io_Message);
+    io->lhr_DriverPrivate1 = NULL;
+    io->lhr_DriverPrivate2 = NULL;
+    ReplyMsg(&io->lhr_Req.io_Message);
 }
 
 static void xfer_done(struct UsbXfer *x)
 {
-    struct IOUsbHWReq *io = x->user;
-    io->iouh_Actual = x->actual;
-    io->iouh_Req.io_Error = map_error(x->status);
-    Remove(&io->iouh_Req.io_Message.mn_Node);
+    struct LuHwReq *io = x->user;
+    io->lhr_Actual = x->actual;
+    io->lhr_Req.io_Error = map_error(x->status);
+    Remove(&io->lhr_Req.io_Message.mn_Node);
     os_free(x, sizeof(*x));
     reply(io);
 }
 
-static void submit_xfer(struct VirtUnit *vu, struct IOUsbHWReq *io)
+static void submit_xfer(struct VirtUnit *vu, struct LuHwReq *io)
 {
-    UWORD cmd = io->iouh_Req.io_Command;
+    UWORD cmd = io->lhr_Req.io_Command;
     struct UsbXfer *x = os_alloc(sizeof(*x));
     if (!x) {
-        io->iouh_Req.io_Error = UHIOERR_OUTOFMEMORY;
+        io->lhr_Req.io_Error = LUHIOERR_OUTOFMEMORY;
         reply(io);
         return;
     }
-    x->type = cmd == UHCMD_CONTROLXFER ? XT_CONTROL : cmd == UHCMD_INTXFER ? XT_INT : XT_BULK;
+    x->type = cmd == LUHCMD_CONTROLXFER ? XT_CONTROL : cmd == LUHCMD_INTXFER ? XT_INT : XT_BULK;
     if (x->type == XT_CONTROL)
-        x->dir = (io->iouh_SetupData.bmRequestType & 0x80) ? XD_IN : XD_OUT;
+        x->dir = (io->lhr_SetupData.bmRequestType & 0x80) ? XD_IN : XD_OUT;
     else
-        x->dir = io->iouh_Dir == UHDIR_IN ? XD_IN : XD_OUT;
-    x->devaddr = (u8)io->iouh_DevAddr;
-    x->endpoint = (u8)io->iouh_Endpoint;
-    x->maxpkt = io->iouh_MaxPktSize;
-    x->interval = io->iouh_Interval;
-    x->nak_timeout = io->iouh_NakTimeout;
-    x->flags = io->iouh_Flags & (UHFF_LOWSPEED | UHFF_NOSHORTPKT | UHFF_NAKTIMEOUT | UHFF_ALLOWRUNTPKTS);
-    lu_memcpy(x->setup, &io->iouh_SetupData, 8);   /* wValue etc. are already little endian */
-    x->data = io->iouh_Data;
-    x->length = io->iouh_Length;
+        x->dir = io->lhr_Dir == LUHDIR_IN ? XD_IN : XD_OUT;
+    x->devaddr = (u8)io->lhr_DevAddr;
+    x->endpoint = (u8)io->lhr_Endpoint;
+    x->maxpkt = io->lhr_MaxPktSize;
+    x->interval = io->lhr_Interval;
+    x->nak_timeout = io->lhr_NakTimeout;
+    x->flags = io->lhr_Flags & (LUHF_LOWSPEED | LUHF_NOSHORTPKT | LUHF_NAKTIMEOUT | LUHF_ALLOWRUNTPKTS);
+    lu_memcpy(x->setup, &io->lhr_SetupData, 8);   /* wValue etc. are already little endian */
+    x->data = io->lhr_Data;
+    x->length = io->lhr_Length;
     x->done = xfer_done;
     x->user = io;
     x->user2 = vu;
-    io->iouh_Actual = 0;
-    io->iouh_DriverPrivate1 = x;
-    AddTail(&vu->active, &io->iouh_Req.io_Message.mn_Node);
+    io->lhr_Actual = 0;
+    io->lhr_DriverPrivate1 = x;
+    AddTail(&vu->active, &io->lhr_Req.io_Message.mn_Node);
     hcd_submit(vu->hcd, x);
 }
 
-static void handle_request(struct VirtUnit *vu, struct IOUsbHWReq *io)
+static void handle_request(struct VirtUnit *vu, struct LuHwReq *io)
 {
-    io->iouh_Req.io_Error = 0;
-    switch (io->iouh_Req.io_Command) {
+    io->lhr_Req.io_Error = 0;
+    switch (io->lhr_Req.io_Command) {
     case CMD_RESET:
-    case UHCMD_USBRESET:
+    case LUHCMD_USBRESET:
         vu->hcd->ops->bus_reset(vu->hcd);
-        vu->state = UHSF_OPERATIONAL;
+        vu->state = LUHS_OPERATIONAL;
         break;
-    case UHCMD_USBRESUME:
-    case UHCMD_USBOPER:
-        vu->state = UHSF_OPERATIONAL;
+    case LUHCMD_USBRESUME:
+    case LUHCMD_USBOPER:
+        vu->state = LUHS_OPERATIONAL;
         break;
-    case UHCMD_USBSUSPEND:
-        vu->state = UHSF_SUSPENDED;
+    case LUHCMD_USBSUSPEND:
+        vu->state = LUHS_SUSPENDED;
         break;
     case CMD_FLUSH: {
         struct Node *n;
         for (n = vu->active.lh_Head; n->ln_Succ; n = n->ln_Succ)
-            vu->hcd->ops->abort(vu->hcd, ((struct IOUsbHWReq *)n)->iouh_DriverPrivate1);
+            vu->hcd->ops->abort(vu->hcd, ((struct LuHwReq *)n)->lhr_DriverPrivate1);
         break;
     }
-    case UHCMD_CONTROLXFER:
-    case UHCMD_INTXFER:
-    case UHCMD_BULKXFER:
-        if (!(vu->state & UHSF_OPERATIONAL)) {
-            io->iouh_Req.io_Error = UHIOERR_USBOFFLINE;
+    case LUHCMD_CONTROLXFER:
+    case LUHCMD_INTXFER:
+    case LUHCMD_BULKXFER:
+        if (!(vu->state & LUHS_OPERATIONAL)) {
+            io->lhr_Req.io_Error = LUHIOERR_USBOFFLINE;
             break;
         }
         submit_xfer(vu, io);
         return;                         /* replied on completion */
-    case UHCMD_ISOXFER:
-        io->iouh_Req.io_Error = UHIOERR_BADPARAMS;  /* not supported yet */
+    case LUHCMD_ISOXFER:
+        io->lhr_Req.io_Error = LUHIOERR_BADPARAMS;  /* not supported yet */
         break;
     default:
-        io->iouh_Req.io_Error = IOERR_NOCMD;
+        io->lhr_Req.io_Error = IOERR_NOCMD;
         break;
     }
     reply(io);
@@ -199,9 +199,9 @@ static void process_aborts(struct VirtUnit *vu)
 {
     struct Node *n, *next;
     for (n = vu->active.lh_Head; (next = n->ln_Succ) != NULL; n = next) {
-        struct IOUsbHWReq *io = (struct IOUsbHWReq *)n;
-        if (io->iouh_DriverPrivate2 == ABORT_MARK)
-            vu->hcd->ops->abort(vu->hcd, io->iouh_DriverPrivate1);
+        struct LuHwReq *io = (struct LuHwReq *)n;
+        if (io->lhr_DriverPrivate2 == ABORT_MARK)
+            vu->hcd->ops->abort(vu->hcd, io->lhr_DriverPrivate1);
     }
 }
 
@@ -260,6 +260,8 @@ static void unit_task(void)
     tmask = 1UL << vu->tport->mp_SigBit;
 
     virtbus_init(&vu->vb, 2);
+    vu->vb.manual_clock = 1;            /* advanced once per loop below */
+    virtbus_tick(&vu->vb, os_time_ms());
     build_topology(vu);
     vu->hcd = lvhc_create(&vu->vb.bus);
     if (!vu->hcd)
@@ -268,7 +270,7 @@ static void unit_task(void)
     vu->hcd->wake_ctx = vu;
     if (!vu->hcd->ops->start(vu->hcd))
         goto out;
-    vu->state = UHSF_OPERATIONAL;
+    vu->state = LUHS_OPERATIONAL;
     vu->ok = 1;
     Signal(vu->creator, SIGF_SINGLE);
 
@@ -291,16 +293,17 @@ static void unit_task(void)
             Forbid();
             m = GetMsg(port);
             if (m)
-                ((struct IOUsbHWReq *)m)->iouh_DriverPrivate2 = TAKEN_MARK;
+                ((struct LuHwReq *)m)->lhr_DriverPrivate2 = TAKEN_MARK;
             Permit();
             if (!m)
                 break;
             /* DriverPrivate2 stays TAKEN_MARK: AbortIO will not touch the
              * node until DriverPrivate1 points to the in-flight transfer. */
-            handle_request(vu, (struct IOUsbHWReq *)m);
+            handle_request(vu, (struct LuHwReq *)m);
         }
         if (sigs & vu->abort_mask)
             process_aborts(vu);
+        virtbus_tick(&vu->vb, os_time_ms());
         demo_tick(vu);
         hcd_poll(vu->hcd);
     }
@@ -312,7 +315,7 @@ out:
     {
         struct Message *m;
         while ((m = GetMsg(port)) != NULL) {
-            ((struct IORequest *)m)->io_Error = UHIOERR_USBOFFLINE;
+            ((struct IORequest *)m)->io_Error = LUHIOERR_USBOFFLINE;
             ReplyMsg(m);
         }
     }
@@ -386,14 +389,14 @@ static struct DevBase *dev_init(REG(d0, struct DevBase *base), REG(a0, BPTR segl
     return base;
 }
 
-static void dev_open(REG(a1, struct IOUsbHWReq *io), REG(d0, ULONG unit), REG(d1, ULONG flags),
+static void dev_open(REG(a1, struct LuHwReq *io), REG(d0, ULONG unit), REG(d1, ULONG flags),
                      REG(a6, struct DevBase *base))
 {
     struct VirtUnit *vu;
     (void)flags;
     base->dev.dd_Library.lib_OpenCnt++;     /* prevent expunge while we wait */
-    io->iouh_Req.io_Error = IOERR_OPENFAIL;
-    if (unit >= NUNITS || io->iouh_Req.io_Message.mn_Length < sizeof(struct IOUsbHWReq)) {
+    io->lhr_Req.io_Error = IOERR_OPENFAIL;
+    if (unit >= NUNITS || io->lhr_Req.io_Message.mn_Length < LUHWREQ_SIZE_V2) {
         base->dev.dd_Library.lib_OpenCnt--;
         return;
     }
@@ -405,18 +408,18 @@ static void dev_open(REG(a1, struct IOUsbHWReq *io), REG(d0, ULONG unit), REG(d1
         return;
     }
     vu->u.unit_OpenCnt++;
-    io->iouh_Req.io_Unit = &vu->u;
-    io->iouh_Req.io_Device = &base->dev;
-    io->iouh_Req.io_Error = 0;
-    io->iouh_Req.io_Message.mn_Node.ln_Type = NT_REPLYMSG;
+    io->lhr_Req.io_Unit = &vu->u;
+    io->lhr_Req.io_Device = &base->dev;
+    io->lhr_Req.io_Error = 0;
+    io->lhr_Req.io_Message.mn_Node.ln_Type = NT_REPLYMSG;
     base->dev.dd_Library.lib_Flags &= ~LIBF_DELEXP;
 }
 
-static BPTR dev_close(REG(a1, struct IOUsbHWReq *io), REG(a6, struct DevBase *base))
+static BPTR dev_close(REG(a1, struct LuHwReq *io), REG(a6, struct DevBase *base))
 {
-    struct VirtUnit *vu = (struct VirtUnit *)io->iouh_Req.io_Unit;
-    io->iouh_Req.io_Unit = (APTR)-1;
-    io->iouh_Req.io_Device = (APTR)-1;
+    struct VirtUnit *vu = (struct VirtUnit *)io->lhr_Req.io_Unit;
+    io->lhr_Req.io_Unit = (APTR)-1;
+    io->lhr_Req.io_Device = (APTR)-1;
     if (vu && --vu->u.unit_OpenCnt == 0) {
         base->unit[vu->number] = NULL;
         unit_stop(vu);
@@ -443,62 +446,62 @@ static BPTR dev_expunge(REG(a6, struct DevBase *base))
 
 static ULONG dev_null(void) { return 0; }
 
-static void query_device(struct VirtUnit *vu, struct IOUsbHWReq *io)
+static void query_device(struct VirtUnit *vu, struct LuHwReq *io)
 {
-    struct TagItem *ti = (struct TagItem *)io->iouh_Data;
+    struct TagItem *ti = (struct TagItem *)io->lhr_Data;
     ULONG count = 0;
     while (ti && ti->ti_Tag != TAG_DONE) {
         switch (ti->ti_Tag) {
         case TAG_IGNORE: break;
         case TAG_MORE:   ti = (struct TagItem *)ti->ti_Data; continue;
         case TAG_SKIP:   ti += ti->ti_Data; break;
-        case UHA_State:       *(ULONG *)ti->ti_Data = vu->state; count++; break;
-        case UHA_Manufacturer:*(STRPTR *)ti->ti_Data = (STRPTR)"LupoUsbDriver"; count++; break;
-        case UHA_ProductName: *(STRPTR *)ti->ti_Data = (STRPTR)"Virtual USB host (LVHC)"; count++; break;
-        case UHA_Version:     *(ULONG *)ti->ti_Data = VERSION; count++; break;
-        case UHA_Revision:    *(ULONG *)ti->ti_Data = REVISION; count++; break;
-        case UHA_Description: *(STRPTR *)ti->ti_Data = (STRPTR)"Simulated LVHC chip with hub, mouse, keyboard, gamepad"; count++; break;
-        case UHA_Copyright:   *(STRPTR *)ti->ti_Data = (STRPTR)"MIT License"; count++; break;
-        case UHA_DriverVersion: *(ULONG *)ti->ti_Data = 0x0200; count++; break;
+        case LUHA_State:       *(ULONG *)ti->ti_Data = vu->state; count++; break;
+        case LUHA_Manufacturer:*(STRPTR *)ti->ti_Data = (STRPTR)"LupoUsbDriver"; count++; break;
+        case LUHA_ProductName: *(STRPTR *)ti->ti_Data = (STRPTR)"Virtual USB host (LVHC)"; count++; break;
+        case LUHA_Version:     *(ULONG *)ti->ti_Data = VERSION; count++; break;
+        case LUHA_Revision:    *(ULONG *)ti->ti_Data = REVISION; count++; break;
+        case LUHA_Description: *(STRPTR *)ti->ti_Data = (STRPTR)"Simulated LVHC chip with hub, mouse, keyboard, gamepad"; count++; break;
+        case LUHA_Copyright:   *(STRPTR *)ti->ti_Data = (STRPTR)"MIT License"; count++; break;
+        case LUHA_DriverVersion: *(ULONG *)ti->ti_Data = 0x0200; count++; break;
         default: break;
         }
         ti++;
     }
-    io->iouh_Actual = count;
-    io->iouh_State = vu->state;
+    io->lhr_Actual = count;
+    io->lhr_State = vu->state;
 }
 
-static void dev_beginio(REG(a1, struct IOUsbHWReq *io), REG(a6, struct DevBase *base))
+static void dev_beginio(REG(a1, struct LuHwReq *io), REG(a6, struct DevBase *base))
 {
-    struct VirtUnit *vu = (struct VirtUnit *)io->iouh_Req.io_Unit;
+    struct VirtUnit *vu = (struct VirtUnit *)io->lhr_Req.io_Unit;
     (void)base;
-    io->iouh_Req.io_Message.mn_Node.ln_Type = NT_MESSAGE;
-    io->iouh_Req.io_Error = 0;
-    io->iouh_DriverPrivate1 = NULL;
-    io->iouh_DriverPrivate2 = NULL;
-    if (io->iouh_Req.io_Command == UHCMD_QUERYDEVICE) {
+    io->lhr_Req.io_Message.mn_Node.ln_Type = NT_MESSAGE;
+    io->lhr_Req.io_Error = 0;
+    io->lhr_DriverPrivate1 = NULL;
+    io->lhr_DriverPrivate2 = NULL;
+    if (io->lhr_Req.io_Command == LUHCMD_QUERYDEVICE) {
         query_device(vu, io);
-        if (!(io->iouh_Req.io_Flags & IOF_QUICK))
-            ReplyMsg(&io->iouh_Req.io_Message);
+        if (!(io->lhr_Req.io_Flags & IOF_QUICK))
+            ReplyMsg(&io->lhr_Req.io_Message);
         return;
     }
-    io->iouh_Req.io_Flags &= ~IOF_QUICK;
-    PutMsg(&vu->u.unit_MsgPort, &io->iouh_Req.io_Message);
+    io->lhr_Req.io_Flags &= ~IOF_QUICK;
+    PutMsg(&vu->u.unit_MsgPort, &io->lhr_Req.io_Message);
 }
 
-static LONG dev_abortio(REG(a1, struct IOUsbHWReq *io), REG(a6, struct DevBase *base))
+static LONG dev_abortio(REG(a1, struct LuHwReq *io), REG(a6, struct DevBase *base))
 {
-    struct VirtUnit *vu = (struct VirtUnit *)io->iouh_Req.io_Unit;
+    struct VirtUnit *vu = (struct VirtUnit *)io->lhr_Req.io_Unit;
     (void)base;
     Forbid();
-    if (io->iouh_Req.io_Message.mn_Node.ln_Type == NT_MESSAGE) {
-        if (io->iouh_DriverPrivate1 == NULL && io->iouh_DriverPrivate2 == NULL) {
+    if (io->lhr_Req.io_Message.mn_Node.ln_Type == NT_MESSAGE) {
+        if (io->lhr_DriverPrivate1 == NULL && io->lhr_DriverPrivate2 == NULL) {
             /* still waiting in the unit port */
-            Remove(&io->iouh_Req.io_Message.mn_Node);
-            io->iouh_Req.io_Error = IOERR_ABORTED;
-            ReplyMsg(&io->iouh_Req.io_Message);
-        } else if (io->iouh_DriverPrivate1) {
-            io->iouh_DriverPrivate2 = ABORT_MARK;
+            Remove(&io->lhr_Req.io_Message.mn_Node);
+            io->lhr_Req.io_Error = IOERR_ABORTED;
+            ReplyMsg(&io->lhr_Req.io_Message);
+        } else if (io->lhr_DriverPrivate1) {
+            io->lhr_DriverPrivate2 = ABORT_MARK;
             Signal(vu->task, vu->abort_mask);
         }
     }
