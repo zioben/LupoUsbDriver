@@ -653,7 +653,8 @@ ULONG OpenPipe(PENDPOINT_DESCRIPTOR Endpoint)
   if((Endpoint->ED_Type)==Endpoint_Isochronous) return(OpenInterruptIsoPipe(Endpoint));
   if((Endpoint->ED_Type)==Endpoint_Interrupt)   return(OpenInterruptIsoPipe(Endpoint));
   if((Endpoint->ED_Type)==Endpoint_Control)     return(OpenControlPipe(Endpoint));
-  if((Endpoint->ED_Type)==Endpoint_Isochronous) return(OpenBulkPipe(Endpoint));  
+  if((Endpoint->ED_Type)==Endpoint_Bulk)        return(OpenBulkPipe(Endpoint));
+  return(0);
 }
 
 void  ClosePipe(PENDPOINT_DESCRIPTOR Endpoint)
