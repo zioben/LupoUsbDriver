@@ -91,6 +91,10 @@ static void rh_complete_cb(void *ctx, struct UsbXfer *x, int status) { done_push
 
 static void complete(struct Lvhc *h, struct UsbXfer *x, int status)
 {
+    if (status == XS_TIMEOUT || status == XS_STALL || status == XS_OVERFLOW ||
+        status == XS_CRCERROR || status == XS_NAKTIMEOUT)
+        LU_INFO("lvhc: addr %u ep %u type %u phase %u -> status %d",
+                x->devaddr, x->endpoint, x->type, x->phase, status);
     q_remove(&h->q[x->type & 3], x);
     if (h->cur == x)
         h->cur = NULL;

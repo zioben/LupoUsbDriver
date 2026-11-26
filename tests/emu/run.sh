@@ -25,9 +25,9 @@ chmod +x "$HD/C/"* "$HD/Devs/"*
 
 cat > "$HD/S/Startup-Sequence" <<'EOF'
 C:mousepos before >SYS:emu.log
-C:lupousbd UNIT=0 TIMEOUT=5 NOINPUT LOG=SYS:emu-1-idle.log
-C:lupousbd UNIT=1 TIMEOUT=5 NOINPUT LOG=SYS:emu-2-demo.log
-C:lupousbd UNIT=1 TIMEOUT=8 LOG=SYS:emu-3-input.log
+C:lupousbd UNIT=0 TIMEOUT=5 NOINPUT VERBOSE LOG=SYS:emu-1-idle.log
+C:lupousbd UNIT=1 TIMEOUT=5 NOINPUT VERBOSE LOG=SYS:emu-2-demo.log
+C:lupousbd UNIT=1 TIMEOUT=8 VERBOSE LOG=SYS:emu-3-input.log
 C:mousepos after >>SYS:emu.log
 EOF
 
@@ -74,7 +74,7 @@ for f in "$HD"/emu*.log; do
     cat "$f"
 done
 echo "=== serial (device debug output, after boot) ==="
-tr -d '\r' < "$EMU/serial.log" 2>/dev/null | sed -n '/lupousb/,$p' | grep -v TaskRes | head -20 || true
+tr -d '\r' < "$EMU/serial.log" 2>/dev/null | sed -n '/lupousb/,$p' | grep -v TaskRes | head -60 || true
 
 # ---------------------------------------------------------------- verdict
 fail=0
