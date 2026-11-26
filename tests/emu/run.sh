@@ -19,6 +19,9 @@ rm -rf "$EMU"
 mkdir -p "$HD/C" "$HD/Devs" "$HD/S"
 cp "$ROOT/build/amiga/Devs/lupovirt.device" "$HD/Devs/"
 cp "$ROOT/build/amiga/C/lupousbd" "$ROOT/build/amiga/C/mousepos" "$HD/C/"
+# CI artifacts lose the x bit; the directory hard disk maps it to the
+# Amiga 'e' protection flag
+chmod +x "$HD/C/"* "$HD/Devs/"*
 
 cat > "$HD/S/Startup-Sequence" <<'EOF'
 C:mousepos before >SYS:emu.log
@@ -48,14 +51,39 @@ cd "$EMU"
 socat -u pty,raw,echo=0,link="$EMU/ttyAmiga" "OPEN:$EMU/serial.log,creat,append" &
 SOCAT=$!
 sleep 1
-# The emulator runs until killed: give it time to boot and run the test.
-HOME=$EMU xvfb-run -a timeout "$SECS" fs-uae "$EMU/test.fs-uae" >"$EMU/fs-uae.out" 2>&1 || true
-
+# The emulator never exits by itself: stop it when the last command of the
+# Startup-Sequence has written its line, or after SECS seconds.
+HOME=$EMU xvfb-run -a fs-uae "$EMU/test.fs-uae" >"$EMU/fs-uae.out" 2>&1 &
+EMUPID=$!
+t=0
+while [ $t -lt "$SECS" ] && ! grep -q "mousepos after" "$HD/emu.log" 2>/dev/null; do
+    sleep 2; t=$((t + 2))
+done
+sleep 2
+pkill -f "fs-uae $EMU/test.fs-uae" 2>/dev/null || true
+wait $EMUPID 2>/dev/null || true
 kill $SOCAT 2>/dev/null || true
+echo "emulator stopped after ${t}s"
+
 [ -f "$HD/emu.log" ] || { echo "no log: the test did not run"; tail -20 "$EMU/fs-uae.out"; exit 1; }
 for f in "$HD"/emu*.log; do
     echo "=== $(basename "$f") (Amiga side) ==="
     cat "$f"
 done
 echo "=== serial (device debug output, after boot) ==="
-tr -d '\r' < "$EMU/serial.log" 2>/dev/null | sed -n '/lupousb/,$p' | head -40 || true
+tr -d '\r' < "$EMU/serial.log" 2>/dev/null | sed -n '/lupousb/,$p' | grep -v TaskRes | head -20 || true
+
+# ---------------------------------------------------------------- verdict
+fail=0
+check() { if eval "$2"; then echo "PASS: $1"; else echo "FAIL: $1"; fail=1; fi; }
+for run in 1-idle 2-demo 3-input; do
+    f="$HD/emu-$run.log"
+    check "$run: 5 devices enumerated and bound" \
+        "[ \$(grep -c 'bound to' '$f' 2>/dev/null) -eq 5 ]"
+    check "$run: clean shutdown" "grep -q 'device addr 1 removed' '$f' 2>/dev/null"
+done
+before=$(sed -n 's/^mousepos before: //p' "$HD/emu.log")
+after=$(sed -n 's/^mousepos after: //p' "$HD/emu.log")
+check "USB mouse moved the Intuition pointer ($before -> $after)" \
+    "[ -n '$after' ] && [ '$before' != '$after' ]"
+exit $fail

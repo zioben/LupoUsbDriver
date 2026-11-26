@@ -32,7 +32,8 @@ jobs:
           name: LupoUsbDriver-amiga
           path: |
             build/dist/LupoUsbDriver.lha
-            build/amiga/C/lupotest
+            build/amiga/C
+            build/amiga/Devs
 
   amiga-tests:
     name: 68k tests under vamos (emulated AmigaOS, big endian)
@@ -42,19 +43,42 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: LupoUsbDriver-amiga
-          path: artifact
+          path: build
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install amitools (vamos)
         run: pip install amitools==0.9.1 greenlet==3.5.6 machine68k==0.5.2
       - name: Run the test suite on an emulated 68020
-        run: vamos -q -C 68020 artifact/amiga/C/lupotest
+        run: vamos -q -C 68020 build/amiga/C/lupotest
+
+  emulator-test:
+    name: Emulated Amiga (FS-UAE + AROS ROM)
+    needs: amiga-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: LupoUsbDriver-amiga
+          path: build
+      - name: Install FS-UAE, Xvfb and socat
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fs-uae xvfb socat
+      - name: Run lupousbd on lupovirt.device in an emulated A1200
+        run: tests/emu/run.sh 300
+      - name: Keep the emulator logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-logs
+          path: |
+            build/emu/hd/*.log
+            build/emu/serial.log
 
   release:
     name: Attach archive to release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [host-tests, amiga-tests]
+    needs: [host-tests, amiga-tests, emulator-test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -62,7 +86,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: LupoUsbDriver-amiga
-          path: artifact
+          path: build
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifact/dist/LupoUsbDriver.lha
+          files: build/dist/LupoUsbDriver.lha
