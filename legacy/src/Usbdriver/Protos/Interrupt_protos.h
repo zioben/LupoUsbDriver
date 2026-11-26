@@ -18,7 +18,7 @@ int AddMediatorPciInterrupt(PHCD_DEVICE_DATA);
 //	Toglie L'interrupt chain
 //-------------------------------------------------------------------------
 
-void RemoveMediatorPciInterrupt(void);
+void RemoveMediatorPciInterrupt(PHCD_DEVICE_DATA devicedata);
 
 //-------------------------------------------------------------------------
 //	Routine di servizio
