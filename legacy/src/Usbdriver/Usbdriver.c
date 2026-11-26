@@ -406,6 +406,7 @@ ULONG main (void)
 									else
 									 {
 										request->USB_Status=USBD_PIPE_NOT_OPENED;
+										mymess->IO_Error=ERR_PIPE_NOT_OPENED;   // else the client waits forever
 									 }
 								}
 								else mymess->IO_Error=ERR_BAD_ARGUMENTS;
