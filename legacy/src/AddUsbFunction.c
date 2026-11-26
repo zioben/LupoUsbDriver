@@ -41,10 +41,10 @@ void main(int argc,char **argv)
  /* port: global initializers of the StormC (C++) build */
  UsbLibrary=OpenLibrary("lupousb.library",0L);
 
- int FunctionNumber=atoi(argv[1]);
+ int FunctionNumber=(argc>1) ? atoi(argv[1]) : 0;   // argv[1] was read even without arguments
  if (FunctionNumber >1) (printf("Add Function %d\n",FunctionNumber));
  if (FunctionNumber==1) (printf("Add RootHub  \n",FunctionNumber));
- if(OpenAll() & FunctionNumber)
+ if(OpenAll())     // was 'OpenAll() & FunctionNumber': bitwise, true only for odd numbers
  {
    if(FunctionNumber==1) Execute("run c:UsbRootHub",0,0);   // input/output are BPTRs
    if(FunctionNumber==0) printf("BUG Detecting Free Address!!!!\n");
