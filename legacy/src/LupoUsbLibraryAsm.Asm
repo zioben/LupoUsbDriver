@@ -83,7 +83,7 @@ NoError:                   ;
    MOVEM.L (SP)+,D1-D7/A0-A6        ;Pop Stack
  RTS
 
-END
+ END
 
  INCDIR  "Stormc:asm-includes/"
  INCLUDE  "exec/exec.i"

@@ -24,7 +24,7 @@
 
 struct  PciBase*   PciBase;
 struct  PciDevice* HcDevice;
-struct  Task*      ThisTask=FindTask(NULL);
+struct  Task*      ThisTask=NULL; /* port: was initialized with FindTask before main() */
 //ULONG 				 DONEQUEUEBIT;
 //ULONG 				 ROOTHUBBIT;
 
@@ -61,6 +61,9 @@ void kill(void)
 
 ULONG main (void)
 {
+ /* port: global initializers of the StormC (C++) build */
+ ThisTask=FindTask(NULL);
+
    if(FindPort(UsbKernelHcPortName)) return(0); // another kernel is running
    if (!(PciBase=(struct PciBase*)OpenLibrary("pci.library",0L)))
    {
@@ -170,7 +173,7 @@ ULONG main (void)
                          {
  									if(SetupRootHubMessagePort(HostController,MyPort)==0)
  										mymess->IO_Error = ERR_ROOT_HUB_LOCKED;
-                         };
+                         }
                          else mymess->IO_Error = ERR_BAD_ARGUMENTS;
                         }
  						break;

@@ -13,7 +13,7 @@
 
 
 struct Library *UsbLibrary=NULL;//OpenLibrary("lupousb.library",0L);
-struct MsgPort *StackPort=CreatePort(UsbStackPortName,0L);
+struct MsgPort *StackPort=NULL; /* port: was initialized with CreatePort before main() */
 
 PUSB_SUPPORT   Support=NULL;
 //PUSB_SUPPORT   RH_Supp=NULL;
@@ -305,6 +305,9 @@ void ExecuteCommand(char* Command,UBYTE val)
 
 void main()
 {
+ /* port: global initializers of the StormC (C++) build */
+ StackPort=CreatePort(UsbStackPortName,0L);
+
  int esci=0;
  ULONG segnale;
  PHC_REQUEST mymess;

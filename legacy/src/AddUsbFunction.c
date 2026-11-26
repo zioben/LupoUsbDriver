@@ -13,7 +13,7 @@
 #include <hcDriverStructs.h>
 #include <DefaultControlEndpoint.h>
 
-struct Library *UsbLibrary=OpenLibrary("lupousb.library",0L);
+struct Library *UsbLibrary=NULL; /* port: was initialized with OpenLibrary before main() */
 PUSB_SUPPORT   Support=NULL;
 
 
@@ -38,6 +38,9 @@ int OpenAll()
 
 void main(int argc,char **argv)
 {
+ /* port: global initializers of the StormC (C++) build */
+ UsbLibrary=OpenLibrary("lupousb.library",0L);
+
  int FunctionNumber=atoi(argv[1]);
  if (FunctionNumber >1) (printf("Add Function %d\n",FunctionNumber));
  if (FunctionNumber==1) (printf("Add RootHub  \n",FunctionNumber));

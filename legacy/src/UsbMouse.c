@@ -24,7 +24,7 @@
 // USB Objects
 //---------------------------------------------------------------------
 
-struct Library *UsbLibrary=OpenLibrary("lupousb.library",0L);
+struct Library *UsbLibrary=NULL; /* port: was initialized with OpenLibrary before main() */
 PUSB_SUPPORT   Support=NULL;
 PUSBD_REQUEST  USB_Req=NULL;
 PUSB_DEVICE    UsbMouse=NULL;
@@ -69,7 +69,7 @@ ULONG  InputLocked=0;
 ULONG  TaskEsci=0;
 
 struct IOStdReq   InputRequest={0};
-struct MsgPort    *Input_MP=CreatePort(NULL,0);
+struct MsgPort    *Input_MP=NULL; /* port: was initialized with CreatePort before main() */
 
 //---------------------------------------------------------------------
 
@@ -273,6 +273,10 @@ void TestForceFeedback(UBYTE FunctionNumber)
 
 void main(void)
 {
+ /* port: global initializers of the StormC (C++) build */
+ UsbLibrary=OpenLibrary("lupousb.library",0L);
+ Input_MP=CreatePort(NULL,0);
+
  if(OpenAll())
  {
    if(!OpenDevice("input.device",0L,(struct IORequest *) &InputRequest,0L))

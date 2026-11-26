@@ -13,7 +13,7 @@
 #include <usb/Protos/HubClass_protos.h>
 
 
-struct Library *UsbLibrary  =OpenLibrary("lupousb.library",0L);
+struct Library *UsbLibrary=NULL; /* port: was initialized with OpenLibrary before main() */
 
 PUSB_SUPPORT Support=NULL;
 PUSB_SUPPORT RH_Supp=NULL;
@@ -184,6 +184,9 @@ void ProcessHub()
 
 void main(void)
 {
+ /* port: global initializers of the StormC (C++) build */
+ UsbLibrary=OpenLibrary("lupousb.library",0L);
+
   ULONG esci=0;
   if (OpenAll())
   {

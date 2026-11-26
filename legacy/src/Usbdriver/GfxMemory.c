@@ -16,8 +16,8 @@ typedef struct _GFX_MEMORY_LIST
   ULONG  GfxAddress;
   ULONG  BytesUsed;
   ULONG  NextAddress;
-  _GFX_MEMORY_LIST *NextNode;
-  _GFX_MEMORY_LIST *PrevNode;
+  struct _GFX_MEMORY_LIST *NextNode;
+  struct _GFX_MEMORY_LIST *PrevNode;
   ULONG  Flags; 
 }GfxMemoryList,*PGfxMemoryList;
 

@@ -25,7 +25,7 @@ struct MsgPort *StackPort;
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-ULONG __saveds GetUsbError(register __a0 PUSB_SUPPORT Req)
+ULONG __saveds GetUsbError(PUSB_SUPPORT Req __asm("a0"))
 {
   if(Req) return (Req->UsbRequest.IO_Error);
   return(NULL);
@@ -35,8 +35,8 @@ ULONG __saveds GetUsbError(register __a0 PUSB_SUPPORT Req)
 //				   Utilità gestione HostController
 //------------------------------------------------------------------------
 
-UBYTE __saveds SetupRootHubMessagePort(register __a0 PUSB_SUPPORT Req,
-                                       register __a1 struct MsgPort *Port)
+UBYTE __saveds SetupRootHubMessagePort(PUSB_SUPPORT Req __asm("a0"),
+                                       struct MsgPort *Port __asm("a1"))
 {
     if((!Req)||(!Port))return(0);
     Req->UsbRequest.IO_Command=CMD_SETUP_ROOT_HUB_PORT;
@@ -44,8 +44,8 @@ UBYTE __saveds SetupRootHubMessagePort(register __a0 PUSB_SUPPORT Req,
     return(SendUsbRequest(Req,KernelPort));
 }
 
-UBYTE __saveds FreeRootHubMessagePort(register __a0 PUSB_SUPPORT Req,
-                                       register __a1 struct MsgPort *Port)
+UBYTE __saveds FreeRootHubMessagePort(PUSB_SUPPORT Req __asm("a0"),
+                                       struct MsgPort *Port __asm("a1"))
 {
     if(Req && Port)
     {
@@ -59,7 +59,7 @@ UBYTE __saveds FreeRootHubMessagePort(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-ULONG __saveds Get32BitFrameNumber(register __a0 PUSB_SUPPORT Req)
+ULONG __saveds Get32BitFrameNumber(PUSB_SUPPORT Req __asm("a0"))
 {
     if(!Req) return(0);
     Req->UsbRequest.IO_Command=CMD_GET_32BIT_FN;
@@ -68,7 +68,7 @@ ULONG __saveds Get32BitFrameNumber(register __a0 PUSB_SUPPORT Req)
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-PHCD_DEVICE_DATA __saveds GetUsbBaseAddress(register __a0 PUSB_SUPPORT Req)
+PHCD_DEVICE_DATA __saveds GetUsbBaseAddress(PUSB_SUPPORT Req __asm("a0"))
 {
   if(!Req)return(NULL);
   Req->UsbRequest.IO_Command=CMD_GET_USB_BASE;
@@ -79,7 +79,7 @@ PHCD_DEVICE_DATA __saveds GetUsbBaseAddress(register __a0 PUSB_SUPPORT Req)
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   KillHost(register __a0 PUSB_SUPPORT Req)
+void __saveds   KillHost(PUSB_SUPPORT Req __asm("a0"))
 {
   if(Req)
   {
@@ -90,7 +90,7 @@ void __saveds   KillHost(register __a0 PUSB_SUPPORT Req)
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   StartHost(register __a0 PUSB_SUPPORT Req)
+void __saveds   StartHost(PUSB_SUPPORT Req __asm("a0"))
 {
   if(Req)
   {
@@ -101,7 +101,7 @@ void __saveds   StartHost(register __a0 PUSB_SUPPORT Req)
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   StopHost(register __a0 PUSB_SUPPORT Req)
+void __saveds   StopHost(PUSB_SUPPORT Req __asm("a0"))
 {
   if(Req)
   {
@@ -112,7 +112,7 @@ void __saveds   StopHost(register __a0 PUSB_SUPPORT Req)
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   PauseHost(register __a0 PUSB_SUPPORT Req)
+void __saveds   PauseHost(PUSB_SUPPORT Req __asm("a0"))
 {
   if(Req)
   {
@@ -124,8 +124,8 @@ void __saveds   PauseHost(register __a0 PUSB_SUPPORT Req)
 //---------------------------------------------------------------------------------------------------------------------------
 
 
-UBYTE __saveds   SetUsbState(register __a0 PUSB_SUPPORT Req,
-					  register __d0 ULONG usbstate)
+UBYTE __saveds   SetUsbState(PUSB_SUPPORT Req __asm("a0"),
+					  ULONG usbstate __asm("d0"))
 {
   if(!Req)return(0);
   Req->UsbRequest.IO_Command=CMD_SET_USB_STATE;
@@ -134,7 +134,7 @@ UBYTE __saveds   SetUsbState(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-ULONG __saveds   GetUsbState(register __a0 PUSB_SUPPORT Req)
+ULONG __saveds   GetUsbState(PUSB_SUPPORT Req __asm("a0"))
 {
   if(!Req)return(-1);
   Req->UsbRequest.IO_Command=CMD_GET_USB_STATE;
@@ -152,8 +152,8 @@ ULONG __saveds   GetUsbState(register __a0 PUSB_SUPPORT Req)
 //---------------------------------------------------------------------------------------------------------------------------
 
 
-char * __saveds   AllocUsbMem(register __a0 PUSB_SUPPORT Req,
-						register __d0 ULONG BufferLeng)
+char * __saveds   AllocUsbMem(PUSB_SUPPORT Req __asm("a0"),
+						ULONG BufferLeng __asm("d0"))
 {
   if((!BufferLeng) || (!Req)) return(NULL);
   Req->UsbRequest.IO_Command=CMD_ALLOCMEM;
@@ -165,8 +165,8 @@ char * __saveds   AllocUsbMem(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   FreeUsbMem(register __a0 PUSB_SUPPORT Req,
-					 register __a1 char *Mem)
+void __saveds   FreeUsbMem(PUSB_SUPPORT Req __asm("a0"),
+					 char *Mem __asm("a1"))
 {
   if(Req && Mem)
   {
@@ -195,7 +195,7 @@ PUSB_SUPPORT AllocUsbSupport(void)
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds   InitUsbSupport(register __a0 PUSB_SUPPORT Req)
+UBYTE __saveds   InitUsbSupport(PUSB_SUPPORT Req __asm("a0"))
 {
  if(!Req) return(0);
  while (!(Req->UserPort=CreatePort(NULL,0)));
@@ -212,7 +212,7 @@ UBYTE __saveds   InitUsbSupport(register __a0 PUSB_SUPPORT Req)
 //---------------------------------------------------------------------------------------------------------------------------
 
 
-void __saveds   FreeUsbSupport(register __a0 PUSB_SUPPORT Req)
+void __saveds   FreeUsbSupport(PUSB_SUPPORT Req __asm("a0"))
 {
  if (Req)
  {
@@ -230,10 +230,10 @@ void __saveds   FreeUsbSupport(register __a0 PUSB_SUPPORT Req)
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-PENDPOINT_DESCRIPTOR __saveds   AllocEndpoint(register __a0 PUSB_SUPPORT Req,
-									 register __d0 ULONG type,
-									 register __d1 ULONG rate,
-									 register __a1 PENDPOINT_CONTROL cont)
+PENDPOINT_DESCRIPTOR __saveds   AllocEndpoint(PUSB_SUPPORT Req __asm("a0"),
+									 ULONG type __asm("d0"),
+									 ULONG rate __asm("d1"),
+									 PENDPOINT_CONTROL cont __asm("a1"))
 {
   if(!Req) return(NULL);
   if(!cont->EC_MaximumPacketSize) return(NULL);
@@ -251,8 +251,8 @@ PENDPOINT_DESCRIPTOR __saveds   AllocEndpoint(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   FreeEndpoint(register __a0 PUSB_SUPPORT Req,
-									  register __a1 PENDPOINT_DESCRIPTOR Endpoint)
+void __saveds   FreeEndpoint(PUSB_SUPPORT Req __asm("a0"),
+									  PENDPOINT_DESCRIPTOR Endpoint __asm("a1"))
 {
   if (Req && Endpoint)
   {
@@ -264,8 +264,8 @@ void __saveds   FreeEndpoint(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   GetEndpointData(register __a0 PUSB_SUPPORT Req,
-										  register __a1 PENDPOINT_DESCRIPTOR Endpoint)
+void __saveds   GetEndpointData(PUSB_SUPPORT Req __asm("a0"),
+										  PENDPOINT_DESCRIPTOR Endpoint __asm("a1"))
 {
  if (Req && Endpoint)
   {
@@ -277,8 +277,8 @@ void __saveds   GetEndpointData(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   SetEndpointData(register __a0 PUSB_SUPPORT Req,
-							register __a1 PENDPOINT_DESCRIPTOR Endpoint)
+void __saveds   SetEndpointData(PUSB_SUPPORT Req __asm("a0"),
+							PENDPOINT_DESCRIPTOR Endpoint __asm("a1"))
 {
  if (Req && Endpoint)
   {
@@ -290,8 +290,8 @@ void __saveds   SetEndpointData(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds   OpenPipe(register __a0 PUSB_SUPPORT Req,
-				  register __a1 PENDPOINT_DESCRIPTOR ed)
+UBYTE __saveds   OpenPipe(PUSB_SUPPORT Req __asm("a0"),
+				  PENDPOINT_DESCRIPTOR ed __asm("a1"))
 {
  if(Req && ed)
  {
@@ -308,8 +308,8 @@ UBYTE __saveds   OpenPipe(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   ClosePipe(register __a0 PUSB_SUPPORT Req,
-					 register __a1 PENDPOINT_DESCRIPTOR ed)
+void __saveds   ClosePipe(PUSB_SUPPORT Req __asm("a0"),
+					 PENDPOINT_DESCRIPTOR ed __asm("a1"))
 {
  if(Req && ed)
  {
@@ -325,8 +325,8 @@ void __saveds   ClosePipe(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-PUSBD_REQUEST __saveds   AllocUsbdRequest(register __a0 PUSB_SUPPORT Req,
-										 register __d0 ULONG BufferLeng)
+PUSBD_REQUEST __saveds   AllocUsbdRequest(PUSB_SUPPORT Req __asm("a0"),
+										 ULONG BufferLeng __asm("d0"))
 {
   if(!Req)return(NULL);
   Req->UsbRequest.IO_Command=CMD_ALLOC_USBD_REQUEST;
@@ -342,8 +342,8 @@ PUSBD_REQUEST __saveds   AllocUsbdRequest(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   FreeUsbdRequest(register __a0 PUSB_SUPPORT Req,
-							register __a1 PUSBD_REQUEST usb)
+void __saveds   FreeUsbdRequest(PUSB_SUPPORT Req __asm("a0"),
+							PUSBD_REQUEST usb __asm("a1"))
 {
   if (Req && usb)
   {
@@ -359,8 +359,8 @@ void __saveds   FreeUsbdRequest(register __a0 PUSB_SUPPORT Req,
 //---------------------------------------------------------------------------------------------------------------------------
 
 
-void __saveds   AbortUsbdRequest(register __a0 PUSB_SUPPORT Req,
-							 register __a1 PUSBD_REQUEST usb)
+void __saveds   AbortUsbdRequest(PUSB_SUPPORT Req __asm("a0"),
+							 PUSBD_REQUEST usb __asm("a1"))
 {
   if (Req && usb)
   {
@@ -373,8 +373,8 @@ void __saveds   AbortUsbdRequest(register __a0 PUSB_SUPPORT Req,
 //---------------------------------------------------------------------------------------------------------------------------
 
 
-void __saveds   FreeUsbdRequestBuffer(register __a0 PUSB_SUPPORT Req,
-									register __a1 PUSBD_REQUEST usb)
+void __saveds   FreeUsbdRequestBuffer(PUSB_SUPPORT Req __asm("a0"),
+									PUSBD_REQUEST usb __asm("a1"))
 {
   if (Req && usb)
   {
@@ -387,9 +387,9 @@ void __saveds   FreeUsbdRequestBuffer(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-ULONG __saveds   AllocUsbdRequestBuffer(register __a0 PUSB_SUPPORT Req,
-										register __a1 PUSBD_REQUEST usb,
-										register __d0 ULONG BufferLeng)
+ULONG __saveds   AllocUsbdRequestBuffer(PUSB_SUPPORT Req __asm("a0"),
+										PUSBD_REQUEST usb __asm("a1"),
+										ULONG BufferLeng __asm("d0"))
 {
   if ((!Req)||(!usb)||(!BufferLeng)) return(0);
   FreeUsbMem(Req,usb->USB_Buffer);
@@ -408,12 +408,12 @@ ULONG __saveds   AllocUsbdRequestBuffer(register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void __saveds   SetupUsbdRequest( register __a0 PUSBD_REQUEST usb,
-											 register __d0 UBYTE a,
-											 register __d1 UBYTE b,
-											 register __d2 UWORD c,
-											 register __d3 UWORD d,
-											 register __d4 UWORD e)
+void __saveds   SetupUsbdRequest( PUSBD_REQUEST usb __asm("a0"),
+											 UBYTE a __asm("d0"),
+											 UBYTE b __asm("d1"),
+											 UWORD c __asm("d2"),
+											 UWORD d __asm("d3"),
+											 UWORD e __asm("d4"))
 {
   if(usb)
   {
@@ -431,9 +431,9 @@ void __saveds   SetupUsbdRequest( register __a0 PUSBD_REQUEST usb,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds   SendUsbdRequest( register __a0 PUSB_SUPPORT Req,
-						 					 register __a1 PENDPOINT_DESCRIPTOR ed,
-											 register __a2 PUSBD_REQUEST usb)
+UBYTE __saveds   SendUsbdRequest( PUSB_SUPPORT Req __asm("a0"),
+						 					 PENDPOINT_DESCRIPTOR ed __asm("a1"),
+											 PUSBD_REQUEST usb __asm("a2"))
 {
   if((!Req) || (!ed) || (!usb)) return(0);
   Req->UsbRequest.IO_Command=CMD_SEND_USBD_REQUEST;
@@ -444,7 +444,7 @@ UBYTE __saveds   SendUsbdRequest( register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-ULONG __saveds   WaitUsbdRequest( register __a0 PUSB_SUPPORT support,register __a1 PUSBD_REQUEST usb)
+ULONG __saveds   WaitUsbdRequest( PUSB_SUPPORT support __asm("a0"),PUSBD_REQUEST usb __asm("a1"))
 {
   if(!usb)return(0);
   //  usb->USB_Reserved=0;
@@ -467,9 +467,9 @@ ULONG __saveds   WaitUsbdRequest( register __a0 PUSB_SUPPORT support,register __
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds  SendSyncUsbdRequest( register __a0 PUSB_SUPPORT Req,
-						 					    register __a1 PENDPOINT_DESCRIPTOR ed,
-											    register __a2 PUSBD_REQUEST usb)
+UBYTE __saveds  SendSyncUsbdRequest( PUSB_SUPPORT Req __asm("a0"),
+						 					    PENDPOINT_DESCRIPTOR ed __asm("a1"),
+											    PUSBD_REQUEST usb __asm("a2"))
 {
   if((!Req) || (!ed) || (!usb)) return(0);
   Req->UsbRequest.IO_Command=CMD_SEND_USBD_REQUEST;
@@ -486,9 +486,9 @@ UBYTE __saveds  SendSyncUsbdRequest( register __a0 PUSB_SUPPORT Req,
 //---------------------------------------------------------------------------------------------------------------------------
 
 
-UBYTE	__saveds SendUsbData( register __a0 PUSB_SUPPORT Req,
-						 		    register __a1 PENDPOINT_DESCRIPTOR ed,
-								    register __a2 PUSBD_REQUEST usb)
+UBYTE	__saveds SendUsbData( PUSB_SUPPORT Req __asm("a0"),
+						 		    PENDPOINT_DESCRIPTOR ed __asm("a1"),
+								    PUSBD_REQUEST usb __asm("a2"))
 {
   if((!Req) || (!ed) || (!usb)) return(0);
   if(usb->USB_Buffer==NULL && usb->USB_BufferLength!=0)
@@ -506,9 +506,9 @@ UBYTE	__saveds SendUsbData( register __a0 PUSB_SUPPORT Req,
 //---------------------------------------------------------------------------------------------------------------------------
 
 
-UBYTE __saveds ReceiveUsbData( register __a0 PUSB_SUPPORT Req,
-						 				 register __a1 PENDPOINT_DESCRIPTOR ed,
-									    register __a2 PUSBD_REQUEST usb)
+UBYTE __saveds ReceiveUsbData( PUSB_SUPPORT Req __asm("a0"),
+						 				 PENDPOINT_DESCRIPTOR ed __asm("a1"),
+									    PUSBD_REQUEST usb __asm("a2"))
 {
  if((!Req) || (!ed) || (!usb)) return(0);
  if(usb->USB_Buffer==NULL && usb->USB_BufferLength!=0)
@@ -530,12 +530,12 @@ UBYTE __saveds ReceiveUsbData( register __a0 PUSB_SUPPORT Req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds ClearFeature(register __a0 PUSB_SUPPORT req,
-						 register __a1 PENDPOINT_DESCRIPTOR ed,
-						 register __a2 PUSBD_REQUEST usb,
-						 register __d0 ULONG recipient,
-						 register __d1 UWORD Feature,
-						 register __d2 UBYTE num)
+UBYTE __saveds ClearFeature(PUSB_SUPPORT req __asm("a0"),
+						 PENDPOINT_DESCRIPTOR ed __asm("a1"),
+						 PUSBD_REQUEST usb __asm("a2"),
+						 ULONG recipient __asm("d0"),
+						 UWORD Feature __asm("d1"),
+						 UBYTE num __asm("d2"))
 {
   // Test Correttezza dei dati:
   if((!req) || (!ed) || (!usb))return(0);
@@ -564,9 +564,9 @@ UBYTE __saveds ClearFeature(register __a0 PUSB_SUPPORT req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds GetConfiguration(register __a0 PUSB_SUPPORT req,
-							  register __a1 PENDPOINT_DESCRIPTOR ed,
-							  register __a2 PUSBD_REQUEST usb)
+UBYTE __saveds GetConfiguration(PUSB_SUPPORT req __asm("a0"),
+							  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+							  PUSBD_REQUEST usb __asm("a2"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -589,13 +589,13 @@ UBYTE __saveds GetConfiguration(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds GetDescriptor(register __a0 PUSB_SUPPORT req,
-						  register __a1 PENDPOINT_DESCRIPTOR ed,
-						  register __a2 PUSBD_REQUEST usb,
-						  register __d0 UBYTE type,
-						  register __d1 UBYTE index,
-						  register __d2 UWORD Leng,
-						  register __d3 UWORD LangID)
+UBYTE __saveds GetDescriptor(PUSB_SUPPORT req __asm("a0"),
+						  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+						  PUSBD_REQUEST usb __asm("a2"),
+						  UBYTE type __asm("d0"),
+						  UBYTE index __asm("d1"),
+						  UWORD Leng __asm("d2"),
+						  UWORD LangID __asm("d3"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -629,10 +629,10 @@ UBYTE __saveds GetDescriptor(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds GetInterface(register __a0 PUSB_SUPPORT req,
-						 register __a1 PENDPOINT_DESCRIPTOR ed,
-						 register __a2 PUSBD_REQUEST usb,
-						 register __d0 UBYTE NInterface)
+UBYTE __saveds GetInterface(PUSB_SUPPORT req __asm("a0"),
+						 PENDPOINT_DESCRIPTOR ed __asm("a1"),
+						 PUSBD_REQUEST usb __asm("a2"),
+						 UBYTE NInterface __asm("d0"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -659,11 +659,11 @@ UBYTE __saveds GetInterface(register __a0 PUSB_SUPPORT req,
 //------------------------------------------------------------------------------------------------------------------
 
 
-UWORD __saveds GetStatus(register __a0 PUSB_SUPPORT req,
-					 register __a1 PENDPOINT_DESCRIPTOR ed,
-					 register __a2 PUSBD_REQUEST usb,
-					 register __d0 ULONG Recipient,
-					 register __d1 UBYTE NumInterface)
+UWORD __saveds GetStatus(PUSB_SUPPORT req __asm("a0"),
+					 PENDPOINT_DESCRIPTOR ed __asm("a1"),
+					 PUSBD_REQUEST usb __asm("a2"),
+					 ULONG Recipient __asm("d0"),
+					 UBYTE NumInterface __asm("d1"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -692,10 +692,10 @@ UWORD __saveds GetStatus(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SetAddress(register __a0 PUSB_SUPPORT req,
-					  register __a1 PENDPOINT_DESCRIPTOR ed,
-					  register __a2 PUSBD_REQUEST usb,
-					  register __d0 UBYTE Address)
+UBYTE __saveds SetAddress(PUSB_SUPPORT req __asm("a0"),
+					  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+					  PUSBD_REQUEST usb __asm("a2"),
+					  UBYTE Address __asm("d0"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -718,10 +718,10 @@ UBYTE __saveds SetAddress(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SetConfiguration(register __a0 PUSB_SUPPORT req,
-							  register __a1 PENDPOINT_DESCRIPTOR ed,
-							  register __a2 PUSBD_REQUEST usb,
-							  register __d0 UBYTE Value)
+UBYTE __saveds SetConfiguration(PUSB_SUPPORT req __asm("a0"),
+							  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+							  PUSBD_REQUEST usb __asm("a2"),
+							  UBYTE Value __asm("d0"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -745,13 +745,13 @@ UBYTE __saveds SetConfiguration(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SetDescriptor(register __a0 PUSB_SUPPORT req,
-						  register __a1 PENDPOINT_DESCRIPTOR ed,
-						  register __a2 PUSBD_REQUEST usb,
-						  register __d0 UBYTE Type,
-						  register __d1 UBYTE Index,
-						  register __d2 UWORD Leng,
-						  register __d3 UWORD LangID)
+UBYTE __saveds SetDescriptor(PUSB_SUPPORT req __asm("a0"),
+						  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+						  PUSBD_REQUEST usb __asm("a2"),
+						  UBYTE Type __asm("d0"),
+						  UBYTE Index __asm("d1"),
+						  UWORD Leng __asm("d2"),
+						  UWORD LangID __asm("d3"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -776,12 +776,12 @@ UBYTE __saveds SetDescriptor(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SetFeature(register __a0 PUSB_SUPPORT req,
-					  register __a1 PENDPOINT_DESCRIPTOR ed,
-					  register __a2 PUSBD_REQUEST usb,
-					  register __d0 ULONG Recipient,
-					  register __d1 UBYTE Interface,
-					  register __d2 UWORD Feature)
+UBYTE __saveds SetFeature(PUSB_SUPPORT req __asm("a0"),
+					  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+					  PUSBD_REQUEST usb __asm("a2"),
+					  ULONG Recipient __asm("d0"),
+					  UBYTE Interface __asm("d1"),
+					  UWORD Feature __asm("d2"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -812,11 +812,11 @@ UBYTE __saveds SetFeature(register __a0 PUSB_SUPPORT req,
 //------------------------------------------------------------------------------------------------------------------
 
 
-UBYTE __saveds SetInterface(register __a0 PUSB_SUPPORT req,
-						 register __a1 PENDPOINT_DESCRIPTOR ed,
-						 register __a2 PUSBD_REQUEST usb,
-						 register __d0 UBYTE Interface,
-						 register __d1 UBYTE AltInterface)
+UBYTE __saveds SetInterface(PUSB_SUPPORT req __asm("a0"),
+						 PENDPOINT_DESCRIPTOR ed __asm("a1"),
+						 PUSBD_REQUEST usb __asm("a2"),
+						 UBYTE Interface __asm("d0"),
+						 UBYTE AltInterface __asm("d1"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -840,10 +840,10 @@ UBYTE __saveds SetInterface(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SynchFrame(register __a0 PUSB_SUPPORT req,
-					  register __a1 PENDPOINT_DESCRIPTOR ed,
-					  register __a2 PUSBD_REQUEST usb,
-					  register __d0 UWORD Frame)
+UBYTE __saveds SynchFrame(PUSB_SUPPORT req __asm("a0"),
+					  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+					  PUSBD_REQUEST usb __asm("a2"),
+					  UWORD Frame __asm("d0"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -874,10 +874,10 @@ UBYTE __saveds SynchFrame(register __a0 PUSB_SUPPORT req,
 //
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds ClearDeviceFeature(register __a0 PUSB_SUPPORT req,
-								 register __a1 PENDPOINT_DESCRIPTOR ed,
-								 register __a2 PUSBD_REQUEST usb,
-								 register __d0 UWORD Feature)
+UBYTE __saveds ClearDeviceFeature(PUSB_SUPPORT req __asm("a0"),
+								 PENDPOINT_DESCRIPTOR ed __asm("a1"),
+								 PUSBD_REQUEST usb __asm("a2"),
+								 UWORD Feature __asm("d0"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -901,10 +901,10 @@ UBYTE __saveds ClearDeviceFeature(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds ClearEndpointFeature(register __a0 PUSB_SUPPORT req,
-									register __a1 PENDPOINT_DESCRIPTOR ed,
-									register __a2 PUSBD_REQUEST usb,
-									register __d0 UWORD Feature)
+UBYTE __saveds ClearEndpointFeature(PUSB_SUPPORT req __asm("a0"),
+									PENDPOINT_DESCRIPTOR ed __asm("a1"),
+									PUSBD_REQUEST usb __asm("a2"),
+									UWORD Feature __asm("d0"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -927,11 +927,11 @@ UBYTE __saveds ClearEndpointFeature(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds ClearInterfaceFeature(register __a0 PUSB_SUPPORT req,
-									 register __a1 PENDPOINT_DESCRIPTOR ed,
-									 register __a2 PUSBD_REQUEST usb,
-									 register __d0 UWORD Feature,
-									 register __d1 UBYTE NumInterface)
+UBYTE __saveds ClearInterfaceFeature(PUSB_SUPPORT req __asm("a0"),
+									 PENDPOINT_DESCRIPTOR ed __asm("a1"),
+									 PUSBD_REQUEST usb __asm("a2"),
+									 UWORD Feature __asm("d0"),
+									 UBYTE NumInterface __asm("d1"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -954,10 +954,10 @@ UBYTE __saveds ClearInterfaceFeature(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SetDeviceFeature(register __a0 PUSB_SUPPORT req,
-							  register __a1 PENDPOINT_DESCRIPTOR ed,
-							  register __a2 PUSBD_REQUEST usb,
-							  register __d0 UWORD Feature)
+UBYTE __saveds SetDeviceFeature(PUSB_SUPPORT req __asm("a0"),
+							  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+							  PUSBD_REQUEST usb __asm("a2"),
+							  UWORD Feature __asm("d0"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -981,10 +981,10 @@ UBYTE __saveds SetDeviceFeature(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SetEndpointFeature(register __a0 PUSB_SUPPORT req,
-                                  register __a1 PENDPOINT_DESCRIPTOR ed,
-                                  register __a2 PUSBD_REQUEST usb,
-                                  register __d0 UWORD Feature)
+UBYTE __saveds SetEndpointFeature(PUSB_SUPPORT req __asm("a0"),
+                                  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+                                  PUSBD_REQUEST usb __asm("a2"),
+                                  UWORD Feature __asm("d0"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -1009,11 +1009,11 @@ UBYTE __saveds SetEndpointFeature(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SetInterfaceFeature(register __a0 PUSB_SUPPORT req,
-								  register __a1 PENDPOINT_DESCRIPTOR ed,
-								  register __a2 PUSBD_REQUEST usb,
-								  register __d0 UWORD Feature,
-								  register __d1 UBYTE NumInterface)
+UBYTE __saveds SetInterfaceFeature(PUSB_SUPPORT req __asm("a0"),
+								  PENDPOINT_DESCRIPTOR ed __asm("a1"),
+								  PUSBD_REQUEST usb __asm("a2"),
+								  UWORD Feature __asm("d0"),
+								  UBYTE NumInterface __asm("d1"))
 {
   if((!req) || (!ed) || (!usb))return(0);
   if(!ed->ED_Reserved[0])
@@ -1035,9 +1035,9 @@ UBYTE __saveds SetInterfaceFeature(register __a0 PUSB_SUPPORT req,
 //  Macros GET_DESCRIPTOR:  DEVICE - CONFIGURATION - INTERFACE - ENDPOINT
 //------------------------------------------------------------------------------------------------------------------
 
-PUSB_DEVICE_DESCRIPTOR __saveds GetDeviceDescriptor(register __a0 PUSB_SUPPORT req,
-												       register __a1 PENDPOINT_DESCRIPTOR ed,
-												       register __a2 PUSBD_REQUEST usb)
+PUSB_DEVICE_DESCRIPTOR __saveds GetDeviceDescriptor(PUSB_SUPPORT req __asm("a0"),
+												       PENDPOINT_DESCRIPTOR ed __asm("a1"),
+												       PUSBD_REQUEST usb __asm("a2"))
 {
   if (GetDescriptor(req,ed,usb,DESCRIPTOR_DEVICE,0,sizeof(USB_DEVICE_DESCRIPTOR),0))
   {
@@ -1054,7 +1054,7 @@ PUSB_DEVICE_DESCRIPTOR __saveds GetDeviceDescriptor(register __a0 PUSB_SUPPORT r
 
 //------------------------------------------------------------------------------------------------------------------
 
-void __saveds FreeDeviceDescriptor(register __a0 PUSB_DEVICE_DESCRIPTOR dev)
+void __saveds FreeDeviceDescriptor(PUSB_DEVICE_DESCRIPTOR dev __asm("a0"))
 {
  if(dev)FreeMem(dev,sizeof(USB_DEVICE_DESCRIPTOR));
  dev=NULL;
@@ -1062,10 +1062,10 @@ void __saveds FreeDeviceDescriptor(register __a0 PUSB_DEVICE_DESCRIPTOR dev)
 
 //------------------------------------------------------------------------------------------------------------------
 
-PUSB_CONFIGURATION_DESCRIPTOR __saveds GetConfigurationDescriptor(register __a0 PUSB_SUPPORT req,
-                                                         register __a1 PENDPOINT_DESCRIPTOR ed,
-                                                         register __a2 PUSBD_REQUEST usb,
-                                                         register __d0 UBYTE ConfValue)
+PUSB_CONFIGURATION_DESCRIPTOR __saveds GetConfigurationDescriptor(PUSB_SUPPORT req __asm("a0"),
+                                                         PENDPOINT_DESCRIPTOR ed __asm("a1"),
+                                                         PUSBD_REQUEST usb __asm("a2"),
+                                                         UBYTE ConfValue __asm("d0"))
 {
   if(GetDescriptor(req,ed,usb,DESCRIPTOR_CONFIGURATION,ConfValue,sizeof(USB_CONFIGURATION_DESCRIPTOR),0))
    {
@@ -1079,7 +1079,7 @@ PUSB_CONFIGURATION_DESCRIPTOR __saveds GetConfigurationDescriptor(register __a0 
 
 //------------------------------------------------------------------------------------------------------------------
 
-void __saveds FreeConfigurationDescriptor(register __a0 PUSB_CONFIGURATION_DESCRIPTOR conf)
+void __saveds FreeConfigurationDescriptor(PUSB_CONFIGURATION_DESCRIPTOR conf __asm("a0"))
 {
  if(conf)FreeMem(conf,sizeof(USB_CONFIGURATION_DESCRIPTOR));
  conf=NULL;
@@ -1087,10 +1087,10 @@ void __saveds FreeConfigurationDescriptor(register __a0 PUSB_CONFIGURATION_DESCR
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds GetConfigurationChunk(register __a0 PUSB_SUPPORT req,
-                                     register __a1 PENDPOINT_DESCRIPTOR ed,
-                                     register __a2 PUSBD_REQUEST usb,
-                                     register __a3 PUSB_CONFIGURATION_DESCRIPTOR conf)
+UBYTE __saveds GetConfigurationChunk(PUSB_SUPPORT req __asm("a0"),
+                                     PENDPOINT_DESCRIPTOR ed __asm("a1"),
+                                     PUSBD_REQUEST usb __asm("a2"),
+                                     PUSB_CONFIGURATION_DESCRIPTOR conf __asm("a3"))
 {
   if( !conf ) return(0);
   if( conf->wTotalLength > usb->USB_BufferTotalLength)
@@ -1106,11 +1106,11 @@ UBYTE __saveds GetConfigurationChunk(register __a0 PUSB_SUPPORT req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-ULONG __saveds GetString(register __a0 PUSB_SUPPORT req,
-                         register __a1 PENDPOINT_DESCRIPTOR ed,
-                         register __a2 PUSBD_REQUEST usb,
-                         register __d0 UBYTE StringID,
-                         register __a3 char* dest)
+ULONG __saveds GetString(PUSB_SUPPORT req __asm("a0"),
+                         PENDPOINT_DESCRIPTOR ed __asm("a1"),
+                         PUSBD_REQUEST usb __asm("a2"),
+                         UBYTE StringID __asm("d0"),
+                         char* dest __asm("a3"))
 {
   if( !req || !ed || !usb || !dest) return(0);
   usb->USB_ShortXferOk=1;
@@ -1143,7 +1143,7 @@ ULONG __saveds GetString(register __a0 PUSB_SUPPORT req,
 //
 //-------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds SendStackRequest(register __a0 PUSB_SUPPORT Support)
+UBYTE __saveds SendStackRequest(PUSB_SUPPORT Support __asm("a0"))
 {
   if(!Support)return(0);
   PutMsg(StackPort,(struct Message*)&Support->UsbRequest);
@@ -1155,7 +1155,7 @@ UBYTE __saveds SendStackRequest(register __a0 PUSB_SUPPORT Support)
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds LockFunction(register __a0 PUSB_SUPPORT Support,register __d0 ULONG FunctionAddress)
+UBYTE __saveds LockFunction(PUSB_SUPPORT Support __asm("a0"),ULONG FunctionAddress __asm("d0"))
 {
  if(!Support) return(0);
  if(FunctionAddress>=128)
@@ -1174,7 +1174,7 @@ UBYTE __saveds LockFunction(register __a0 PUSB_SUPPORT Support,register __d0 ULO
 
 //------------------------------------------------------------------------------------------------------------------
 
-void __saveds UnLockFunction(register __a0 PUSB_SUPPORT Support,register __d0 ULONG FunctionAddress)
+void __saveds UnLockFunction(PUSB_SUPPORT Support __asm("a0"),ULONG FunctionAddress __asm("d0"))
 {
  if(Support)
  {
@@ -1193,7 +1193,7 @@ void __saveds UnLockFunction(register __a0 PUSB_SUPPORT Support,register __d0 UL
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE __saveds UsbInitFunction(register __a0 PUSB_SUPPORT Support,register __d0 UBYTE DeviceSpeed)
+UBYTE __saveds UsbInitFunction(PUSB_SUPPORT Support __asm("a0"),UBYTE DeviceSpeed __asm("d0"))
 {
  if (!Support) return(0);
  if (DeviceSpeed) DeviceSpeed=1;
@@ -1206,7 +1206,7 @@ UBYTE __saveds UsbInitFunction(register __a0 PUSB_SUPPORT Support,register __d0 
 
 //------------------------------------------------------------------------------------------------------------------
 
-void __saveds UsbRemoveFunction(register __a0 PUSB_SUPPORT Support,register __d0 UBYTE FunctionAddress)
+void __saveds UsbRemoveFunction(PUSB_SUPPORT Support __asm("a0"),UBYTE FunctionAddress __asm("d0"))
 {
  if ((!Support) || FunctionAddress>=128)
  {
@@ -1222,7 +1222,7 @@ void __saveds UsbRemoveFunction(register __a0 PUSB_SUPPORT Support,register __d0
 
 //------------------------------------------------------------------------------------------------------------------
 
-PUSB_DEVICE __saveds GetUsbDevice(register __a0 PUSB_SUPPORT Support,register __d0 UBYTE FunctionAddress)
+PUSB_DEVICE __saveds GetUsbDevice(PUSB_SUPPORT Support __asm("a0"),UBYTE FunctionAddress __asm("d0"))
 {
   if(! Support) return(NULL);
   if(FunctionAddress>=128) return(NULL);

@@ -24,6 +24,6 @@ void RemoveMediatorPciInterrupt(void);
 //	Routine di servizio
 //-------------------------------------------------------------------------
 
-char ProcessInterrupt(register __a1 PHCD_DEVICE_DATA);
+char ProcessInterrupt(PHCD_DEVICE_DATA _a1 __asm("a1"));
 
 #endif

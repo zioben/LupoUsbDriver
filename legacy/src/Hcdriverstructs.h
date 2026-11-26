@@ -203,7 +203,7 @@ typedef struct _ENDPOINT_DESCRIPTOR
 	ULONG									ED_Rate;
 	ULONG									ED_Bandwidth;
 //	ULONG									ED_MaxPacket;
-   _ENDPOINT_DESCRIPTOR*			ED_PrevED;
+   struct _ENDPOINT_DESCRIPTOR*			ED_PrevED;
 }
 ENDPOINT_DESCRIPTOR,*PENDPOINT_DESCRIPTOR;
 

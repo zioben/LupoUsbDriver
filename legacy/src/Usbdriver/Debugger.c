@@ -81,7 +81,7 @@ void printfTD(PTRANSFER_DESCRIPTOR TD)
  printf("Status.........:%#X\n",TD->TD_Status);
  printf("CancelPending..:%#X\n",TD->TD_CancelPending);
  printf("TransferCount..:%#X\n",TD->TD_TransferCount);
- printf("\n")
+ printf("\n");
 }
 
 

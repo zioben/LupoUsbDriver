@@ -19,14 +19,14 @@
 
 #pragma libbase Library;
 
-UWORD SwapWord(register __d0 UWORD a)
+UWORD SwapWord(UWORD a __asm("d0"))
 {
   return(((a>>8)+(a<<8)));
 }
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE WaitUsbResult(register __a0 PUSB_REQUESTER Req)
+UBYTE WaitUsbResult(PUSB_REQUESTER Req __asm("a0"))
 {
   WaitPort(Req->UserPort);
   while((Req->DummyMess=GetMsg(Req->UserPort)));
@@ -36,7 +36,7 @@ UBYTE WaitUsbResult(register __a0 PUSB_REQUESTER Req)
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE WaitResult(register __a0 PUSB_REQUESTER req, register __a1 PUSBD_REQUEST usb)
+UBYTE WaitResult(PUSB_REQUESTER req __asm("a0"), PUSBD_REQUEST usb __asm("a1"))
 {
   if(WaitUsbResult(req))
     if(WaitUsbdRequest(usb)) return(1);
@@ -46,12 +46,12 @@ UBYTE WaitResult(register __a0 PUSB_REQUESTER req, register __a1 PUSBD_REQUEST u
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-void SetupUsbdRequest(register __a0 PUSBD_REQUEST usb,
-							 register __d0 UBYTE a,
-							 register __d1 UBYTE b,
-							 register __d2 UWORD c,
-							 register __d3 UWORD d,
-							 register __d4 UWORD e)
+void SetupUsbdRequest(PUSBD_REQUEST usb __asm("a0"),
+							 UBYTE a __asm("d0"),
+							 UBYTE b __asm("d1"),
+							 UWORD c __asm("d2"),
+							 UWORD d __asm("d3"),
+							 UWORD e __asm("d4"))
 {
   usb->Setup[0]=a;
   usb->Setup[1]=b;
@@ -66,9 +66,9 @@ void SetupUsbdRequest(register __a0 PUSBD_REQUEST usb,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE AsyncSendRequest(register __a0 PUSB_REQUESTER req,
-							  register __a1 PHCD_ENDPOINT ed,
-							  register __a2 PUSBD_REQUEST usb)
+UBYTE AsyncSendRequest(PUSB_REQUESTER req __asm("a0"),
+							  PHCD_ENDPOINT ed __asm("a1"),
+							  PUSBD_REQUEST usb __asm("a2"))
 {
   req->UsbRequest.IO_Command=CMD_SEND_USBD_REQUEST;
   req->UsbRequest.IO_Data=(ULONG)usb;
@@ -79,9 +79,9 @@ UBYTE AsyncSendRequest(register __a0 PUSB_REQUESTER req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE SyncSendRequest(register __a0 PUSB_REQUESTER req,
-			  				 register __a1 PHCD_ENDPOINT ed,
-							 register __a2 PUSBD_REQUEST usb)
+UBYTE SyncSendRequest(PUSB_REQUESTER req __asm("a0"),
+			  				 PHCD_ENDPOINT ed __asm("a1"),
+							 PUSBD_REQUEST usb __asm("a2"))
 {
   req->UsbRequest.IO_Command=CMD_SEND_USBD_REQUEST;
   req->UsbRequest.IO_Data=(ULONG)usb;
@@ -94,12 +94,12 @@ UBYTE SyncSendRequest(register __a0 PUSB_REQUESTER req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE ClearFeature(register __a0 PUSB_REQUESTER req,
-						 register __a1 PHCD_ENDPOINT ed,
-						 register __a2 PUSBD_REQUEST usb,
-						 register __d0 ULONG recipient,
-						 register __d1 UWORD Feature,
-						 register __d2 UBYTE num)
+UBYTE ClearFeature(PUSB_REQUESTER req __asm("a0"),
+						 PHCD_ENDPOINT ed __asm("a1"),
+						 PUSBD_REQUEST usb __asm("a2"),
+						 ULONG recipient __asm("d0"),
+						 UWORD Feature __asm("d1"),
+						 UBYTE num __asm("d2"))
 {
   // Init comune a tutti i campi:
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
@@ -114,9 +114,9 @@ UBYTE ClearFeature(register __a0 PUSB_REQUESTER req,
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-UBYTE GetConfiguration(register __a0 PUSB_REQUESTER req,
-							  register __a1 PHCD_ENDPOINT ed,
-							  register __a2 PUSBD_REQUEST usb)
+UBYTE GetConfiguration(PUSB_REQUESTER req __asm("a0"),
+							  PHCD_ENDPOINT ed __asm("a1"),
+							  PUSBD_REQUEST usb __asm("a2"))
 {
 
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
@@ -126,13 +126,13 @@ UBYTE GetConfiguration(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE GetDescriptor(register __a0 PUSB_REQUESTER req,
-						  register __a1 PHCD_ENDPOINT ed,
-						  register __a2 PUSBD_REQUEST usb,
-						  register __d0 UBYTE type,
-						  register __d1 UBYTE index,
-						  register __d2 UWORD Leng,
-						  register __d3 UWORD LangID)
+UBYTE GetDescriptor(PUSB_REQUESTER req __asm("a0"),
+						  PHCD_ENDPOINT ed __asm("a1"),
+						  PUSBD_REQUEST usb __asm("a2"),
+						  UBYTE type __asm("d0"),
+						  UBYTE index __asm("d1"),
+						  UWORD Leng __asm("d2"),
+						  UWORD LangID __asm("d3"))
 {
 
   if (ed->HcdED == NULL)           {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
@@ -143,10 +143,10 @@ UBYTE GetDescriptor(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE GetInterface(register __a0 PUSB_REQUESTER req,
-						 register __a1 PHCD_ENDPOINT ed,
-						 register __a2 PUSBD_REQUEST usb,
-						 register __d0 UBYTE NInterface)
+UBYTE GetInterface(PUSB_REQUESTER req __asm("a0"),
+						 PHCD_ENDPOINT ed __asm("a1"),
+						 PUSBD_REQUEST usb __asm("a2"),
+						 UBYTE NInterface __asm("d0"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x81,GET_INTERFACE,0,NInterface,1);
@@ -159,11 +159,11 @@ UBYTE GetInterface(register __a0 PUSB_REQUESTER req,
 //------------------------------------------------------------------------------------------------------------------
 
 
-UWORD GetStatus(register __a0 PUSB_REQUESTER req,
-					 register __a1 PHCD_ENDPOINT ed,
-					 register __a2 PUSBD_REQUEST usb,
-					 register __d0 ULONG Recipient,
-					 register __d1 UBYTE NumInterface)
+UWORD GetStatus(PUSB_REQUESTER req __asm("a0"),
+					 PHCD_ENDPOINT ed __asm("a1"),
+					 PUSBD_REQUEST usb __asm("a2"),
+					 ULONG Recipient __asm("d0"),
+					 UBYTE NumInterface __asm("d1"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   switch(Recipient)
@@ -178,10 +178,10 @@ UWORD GetStatus(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE SetAddress(register __a0 PUSB_REQUESTER req,
-					  register __a1 PHCD_ENDPOINT ed,
-					  register __a2 PUSBD_REQUEST usb,
-					  register __d0 UBYTE Address)
+UBYTE SetAddress(PUSB_REQUESTER req __asm("a0"),
+					  PHCD_ENDPOINT ed __asm("a1"),
+					  PUSBD_REQUEST usb __asm("a2"),
+					  UBYTE Address __asm("d0"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x00,SET_ADDRESS,Address,0,0);
@@ -190,10 +190,10 @@ UBYTE SetAddress(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE SetConfiguration(register __a0 PUSB_REQUESTER req,
-							  register __a1 PHCD_ENDPOINT ed,
-							  register __a2 PUSBD_REQUEST usb,
-							  register __d0 UBYTE Value)
+UBYTE SetConfiguration(PUSB_REQUESTER req __asm("a0"),
+							  PHCD_ENDPOINT ed __asm("a1"),
+							  PUSBD_REQUEST usb __asm("a2"),
+							  UBYTE Value __asm("d0"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x00,SET_CONFIGURATION,Value,0,0);
@@ -202,13 +202,13 @@ UBYTE SetConfiguration(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE SetDescriptor(register __a0 PUSB_REQUESTER req,
-						  register __a1 PHCD_ENDPOINT ed,
-						  register __a2 PUSBD_REQUEST usb,
-						  register __d0 UBYTE Type,
-						  register __d1 UBYTE Index,
-						  register __d2 UWORD Leng,
-						  register __d3 UWORD LangID)
+UBYTE SetDescriptor(PUSB_REQUESTER req __asm("a0"),
+						  PHCD_ENDPOINT ed __asm("a1"),
+						  PUSBD_REQUEST usb __asm("a2"),
+						  UBYTE Type __asm("d0"),
+						  UBYTE Index __asm("d1"),
+						  UWORD Leng __asm("d2"),
+						  UWORD LangID __asm("d3"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   if (Leng>usb->BufferTotalLength) return(0);
@@ -218,12 +218,12 @@ UBYTE SetDescriptor(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE SetFeature(register __a0 PUSB_REQUESTER req,
-					  register __a1 PHCD_ENDPOINT ed,
-					  register __a2 PUSBD_REQUEST usb,
-					  register __d0 ULONG Recipient,
-					  register __d1 UBYTE Interface,
-					  register __d2 UWORD Feature)
+UBYTE SetFeature(PUSB_REQUESTER req __asm("a0"),
+					  PHCD_ENDPOINT ed __asm("a1"),
+					  PUSBD_REQUEST usb __asm("a2"),
+					  ULONG Recipient __asm("d0"),
+					  UBYTE Interface __asm("d1"),
+					  UWORD Feature __asm("d2"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   switch(Recipient)
@@ -239,11 +239,11 @@ UBYTE SetFeature(register __a0 PUSB_REQUESTER req,
 //------------------------------------------------------------------------------------------------------------------
 
 
-UBYTE SetInterface(register __a0 PUSB_REQUESTER req,
-						 register __a1 PHCD_ENDPOINT ed,
-						 register __a2 PUSBD_REQUEST usb,
-						 register __d0 UBYTE Interface,
-						 register __d1 UBYTE AltInterface)
+UBYTE SetInterface(PUSB_REQUESTER req __asm("a0"),
+						 PHCD_ENDPOINT ed __asm("a1"),
+						 PUSBD_REQUEST usb __asm("a2"),
+						 UBYTE Interface __asm("d0"),
+						 UBYTE AltInterface __asm("d1"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x01,SET_INTERFACE,AltInterface,Interface,0);
@@ -252,10 +252,10 @@ UBYTE SetInterface(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE SynchFrame(register __a0 PUSB_REQUESTER req,
-					  register __a1 PHCD_ENDPOINT ed,
-					  register __a2 PUSBD_REQUEST usb,
-					  register __d0 UWORD Frame)
+UBYTE SynchFrame(PUSB_REQUESTER req __asm("a0"),
+					  PHCD_ENDPOINT ed __asm("a1"),
+					  PUSBD_REQUEST usb __asm("a2"),
+					  UWORD Frame __asm("d0"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   if (ed->Type != Endpoint_Isochronous) return(0);
@@ -272,10 +272,10 @@ UBYTE SynchFrame(register __a0 PUSB_REQUESTER req,
 //
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE ClearDeviceFeature(register __a0 PUSB_REQUESTER req,
-								 register __a1 PHCD_ENDPOINT ed,
-								 register __a2 PUSBD_REQUEST usb,
-								 register __d0 UWORD Feature)
+UBYTE ClearDeviceFeature(PUSB_REQUESTER req __asm("a0"),
+								 PHCD_ENDPOINT ed __asm("a1"),
+								 PUSBD_REQUEST usb __asm("a2"),
+								 UWORD Feature __asm("d0"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x00,CLEAR_FEATURE,Feature,0,0);
@@ -284,10 +284,10 @@ UBYTE ClearDeviceFeature(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE ClearEndpointFeature(register __a0 PUSB_REQUESTER req,
-									register __a1 PHCD_ENDPOINT ed,
-									register __a2 PUSBD_REQUEST usb,
-									register __d0 UWORD Feature)
+UBYTE ClearEndpointFeature(PUSB_REQUESTER req __asm("a0"),
+									PHCD_ENDPOINT ed __asm("a1"),
+									PUSBD_REQUEST usb __asm("a2"),
+									UWORD Feature __asm("d0"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x02,CLEAR_FEATURE,Feature,ed->Control.EndpointNumber | 0x80,0);
@@ -296,11 +296,11 @@ UBYTE ClearEndpointFeature(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE ClearInterfaceFeature(register __a0 PUSB_REQUESTER req,
-									 register __a1 PHCD_ENDPOINT ed,
-									 register __a2 PUSBD_REQUEST usb,
-									 register __d0 UWORD Feature,
-									 register __d1 UBYTE NumInterface)
+UBYTE ClearInterfaceFeature(PUSB_REQUESTER req __asm("a0"),
+									 PHCD_ENDPOINT ed __asm("a1"),
+									 PUSBD_REQUEST usb __asm("a2"),
+									 UWORD Feature __asm("d0"),
+									 UBYTE NumInterface __asm("d1"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x01,CLEAR_FEATURE,Feature,NumInterface,0);
@@ -309,10 +309,10 @@ UBYTE ClearInterfaceFeature(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE SetDeviceFeature(register __a0 PUSB_REQUESTER req,
-							  register __a1 PHCD_ENDPOINT ed,
-							  register __a2 PUSBD_REQUEST usb,
-							  register __d0 UWORD Feature)
+UBYTE SetDeviceFeature(PUSB_REQUESTER req __asm("a0"),
+							  PHCD_ENDPOINT ed __asm("a1"),
+							  PUSBD_REQUEST usb __asm("a2"),
+							  UWORD Feature __asm("d0"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x00,SET_FEATURE,Feature,0,0);
@@ -321,10 +321,10 @@ UBYTE SetDeviceFeature(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE SetEndpointFeature(register __a0 PUSB_REQUESTER req,
-								 register __a1 PHCD_ENDPOINT ed,
-								 register __a2 PUSBD_REQUEST usb,
-								 register __d0 UWORD Feature)
+UBYTE SetEndpointFeature(PUSB_REQUESTER req __asm("a0"),
+								 PHCD_ENDPOINT ed __asm("a1"),
+								 PUSBD_REQUEST usb __asm("a2"),
+								 UWORD Feature __asm("d0"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x02,SET_FEATURE,Feature,ed->Control.EndpointNumber | 0x80,0);
@@ -333,11 +333,11 @@ UBYTE SetEndpointFeature(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-UBYTE SetInterfaceFeature(register __a0 PUSB_REQUESTER req,
-								  register __a1 PHCD_ENDPOINT ed,
-								  register __a2 PUSBD_REQUEST usb,
-								  register __d0 UWORD Feature,
-								  register __d1 UBYTE NumInterface)
+UBYTE SetInterfaceFeature(PUSB_REQUESTER req __asm("a0"),
+								  PHCD_ENDPOINT ed __asm("a1"),
+								  PUSBD_REQUEST usb __asm("a2"),
+								  UWORD Feature __asm("d0"),
+								  UBYTE NumInterface __asm("d1"))
 {
   if (ed->HcdED == NULL) {req->UsbRequest.IO_Error=ERR_PIPE_NOT_OPENED;return(0);}
   SetupUsbdRequest(usb,0x01,SET_FEATURE,Feature,NumInterface,0);
@@ -348,9 +348,9 @@ UBYTE SetInterfaceFeature(register __a0 PUSB_REQUESTER req,
 //					Descriptor Macros
 //------------------------------------------------------------------------
 
-PDEVICE_DESCRIPTOR GetDeviceDescriptor(register __a0 PUSB_REQUESTER req,
-												   register __a1 PHCD_ENDPOINT ed,
-												   register __a2 PUSBD_REQUEST usb)
+PDEVICE_DESCRIPTOR GetDeviceDescriptor(PUSB_REQUESTER req __asm("a0"),
+												   PHCD_ENDPOINT ed __asm("a1"),
+												   PUSBD_REQUEST usb __asm("a2"))
 {
   PDEVICE_DESCRIPTOR a,b;
   if((GetDescriptor(req,ed,usb,DESCRIPTOR_DEVICE,0,0,sizeof(DEVICE_DESCRIPTOR))))
@@ -378,17 +378,17 @@ PDEVICE_DESCRIPTOR GetDeviceDescriptor(register __a0 PUSB_REQUESTER req,
 
 //------------------------------------------------------------------------------------------------------------------
 
-void FreeDeviceDescriptor(register __a0 PDEVICE_DESCRIPTOR dev)
+void FreeDeviceDescriptor(PDEVICE_DESCRIPTOR dev __asm("a0"))
 {
  if(dev)FreeMem(dev,sizeof(DEVICE_DESCRIPTOR));
 }
 
 //------------------------------------------------------------------------------------------------------------------
 
-PCONFIGURATION_DESCRIPTOR GetConfigurationDescriptor(register __a0 PUSB_REQUESTER req,
-																	   register __a1 PHCD_ENDPOINT ed,
-																	   register __a2 PUSBD_REQUEST usb,
-																	   register __d0 UBYTE ConfValue)
+PCONFIGURATION_DESCRIPTOR GetConfigurationDescriptor(PUSB_REQUESTER req __asm("a0"),
+																	   PHCD_ENDPOINT ed __asm("a1"),
+																	   PUSBD_REQUEST usb __asm("a2"),
+																	   UBYTE ConfValue __asm("d0"))
 {
   PCONFIGURATION_DESCRIPTOR a,b;
   if((GetDescriptor(req,ed,usb,DESCRIPTOR_CONFIGURATION,ConfValue,0,sizeof(CONFIGURATION_DESCRIPTOR))))
@@ -410,7 +410,7 @@ PCONFIGURATION_DESCRIPTOR GetConfigurationDescriptor(register __a0 PUSB_REQUESTE
 
 //------------------------------------------------------------------------------------------------------------------
 
-void FreeConfigurationDescriptor(register __a0 PDEVICE_DESCRIPTOR conf)
+void FreeConfigurationDescriptor(PDEVICE_DESCRIPTOR conf __asm("a0"))
 {
  if(conf)FreeMem(conf,sizeof(CONFIGURATION_DESCRIPTOR));
 }

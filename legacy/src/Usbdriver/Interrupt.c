@@ -21,7 +21,7 @@
 #include "protos/Endpoint_protos.h"
 #include "protos/HCDriver_protos.h"
 
-extern PciDevice *HcDevice;	  
+extern struct PciDevice *HcDevice;	  
 extern ROOT_HUB_MESSAGE RootHubMess;
 extern ULONG AvvisaCambioStatoRootHub;
 
@@ -78,7 +78,7 @@ struct Message InterruptMessage={0};
  //  Aggiungi un interrupt al chain del MEDIATOR PCI 
 //-----------------------------------------------------------------------------
 
-char ProcessInterrupt(register __a1 PHCD_DEVICE_DATA);
+char ProcessInterrupt(PHCD_DEVICE_DATA _a1 __asm("a1"));
 
 int AddMediatorPciInterrupt(PHCD_DEVICE_DATA hc)
 {
@@ -119,7 +119,7 @@ ULONG ContextInfo,Frame,i;
 PTRANSFER_DESCRIPTOR TD,LASTTD,TMPTD;
 
 
-char ProcessInterrupt(register __a1 PHCD_DEVICE_DATA devicedata)
+char ProcessInterrupt(PHCD_DEVICE_DATA devicedata __asm("a1"))
 {
 
   //ULONG ContextInfo,Frame,i;

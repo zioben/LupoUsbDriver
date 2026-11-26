@@ -38,11 +38,11 @@ ULONG CurrentRegVal[BOTTONI];
 ULONG PastRegVal[BOTTONI];
 MyString Register[BOTTONI+1];
 
-struct Library *WindowBase =OpenLibrary("window.class",44);
-struct Library *ButtonBase =OpenLibrary("gadgets/button.gadget",44);
-struct Library *LayoutBase =OpenLibrary("gadgets/layout.gadget",44);
-struct Library *LabelBase  =OpenLibrary("images/label.image",44);
-struct Library *IntegerBase=OpenLibrary("gadgets/integer.gadget",44);
+struct Library *WindowBase=NULL; /* port: was initialized with OpenLibrary before main() */
+struct Library *ButtonBase=NULL; /* port: was initialized with OpenLibrary before main() */
+struct Library *LayoutBase=NULL; /* port: was initialized with OpenLibrary before main() */
+struct Library *LabelBase=NULL; /* port: was initialized with OpenLibrary before main() */
+struct Library *IntegerBase=NULL; /* port: was initialized with OpenLibrary before main() */
 
 struct MsgPort *MyPort=NULL;
 struct MsgPort *LupoPort=NULL;
@@ -67,7 +67,7 @@ ULONG	 esci=0;
 
 HC_REQUEST	myreq;
 
-extern ULONG ConvertLong(register __d0 ULONG);
+extern ULONG ConvertLong(ULONG _d0 __asm("d0"));
 
 void PrintBin(PMyString s,ULONG val)
 {
@@ -452,6 +452,13 @@ void ShowWellcomeMessage()
 
 int main(int argc,char *argv)
 {
+ /* port: global initializers of the StormC (C++) build */
+ WindowBase=OpenLibrary("window.class",44);
+ ButtonBase=OpenLibrary("gadgets/button.gadget",44);
+ LayoutBase=OpenLibrary("gadgets/layout.gadget",44);
+ LabelBase=OpenLibrary("images/label.image",44);
+ IntegerBase=OpenLibrary("gadgets/integer.gadget",44);
+
  int pippo;
  if (OpenAll())
 
