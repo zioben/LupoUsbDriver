@@ -84,5 +84,11 @@ Le bozze `Documents/proposals/Makefile.draft` e `build.yml.draft` sono superate 
    - **gli header di `pci.library` della Mediator** (`libraries/pci.h`, `clib/Pci_lib_protos.h`, `fd/pci_lib.fd`, © Elbox, "All Rights Reserved"). Erano l'unica dipendenza mancante per ricostruire la build del codice legacy (fase F1) e per un eventuale backend L0 PCI;
    - `resources/card.h` e `cardres_lib.fd` per `card.resource`, già presenti anche nell'NDK 3.2 del container.
 
-   Non contengono i ROM Kernel Manual né i libri: in `Manuals/` ci sono solo le guide "Changes 3.0". Se esistono in formato elettronico vanno messi in `third_party/docs/`.
+   Non contengono i ROM Kernel Manual né i libri: in `Manuals/` ci sono solo le guide "Changes 3.0".
+   In `third_party/docs/` ci sono inoltre (sempre fuori da git) il **RKRM DOS** (PDF) e gli **esempi del RKRM Devices** (`rkrm_devices_examples/`).
+
+   Confronto di `lupovirt.device` con lo scheletro ufficiale `sampledevice/ramdev.device.asm`:
+   - **allineati:** Open incrementa `lib_OpenCnt` prima di qualunque attesa e marca la richiesta `NT_REPLYMSG`; BeginIO imposta `NT_MESSAGE` e azzera `IOF_QUICK` quando accoda; Close mette `io_Unit`/`io_Device` a -1 ed esegue l'expunge differito; Expunge non attende mai (viene chiamato dall'allocatore di memoria).
+   - **differenza consapevole:** alla chiusura dell'ultima unità Close aspetta, con un segnale, la terminazione del task dell'unità. ramdev invece fa `RemTask` diretto. Attendere in Close interrompe temporaneamente il Forbid di `CloseDevice`; è una pratica diffusa, ma va tenuta d'occhio nelle prove su AmigaOS.
+   - `input/Set_Mouse.c` conferma l'uso di `IND_WRITEEVENT` fatto in `hidsink_input.c`. `gameport/Absolute_Joystick.c` è il riferimento per decidere come presentare i joystick USB.
    La build del nuovo stack continua a usare l'NDK 3.2 del container (necessario in CI); gli include 3.1 servono come riferimento e per il codice legacy.
