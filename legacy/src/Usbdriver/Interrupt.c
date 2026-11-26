@@ -126,6 +126,9 @@ char ProcessInterrupt(PHCD_DEVICE_DATA devicedata __asm("a1"))
   //PTRANSFER_DESCRIPTOR TD,LASTTD,TMPTD;
   // Ricorda gli interrupt
   ContextInfo = devicedata->HC->HcInterruptStatus & INTMASKENABLE;//devicedata->HC->HcInterruptEnable;
+  // The Mediator interrupt chain is shared with the other PCI cards:
+  // if our controller has nothing pending, the interrupt is not ours.
+  if(ContextInfo==0) return(0);
   HcInterruptClear(devicedata);
   devicedata->IntCount[IBASE]++;
 
