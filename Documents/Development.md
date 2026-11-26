@@ -12,7 +12,7 @@ L'hardware reale non è ancora disponibile: le due schede PCMCIA in possesso son
 | (sim) | Chip **LVHC** simulato + hub, mouse, tastiera e gamepad virtuali | `src/sim/`, `include/lupousb/lvhc_regs.h`, `include/lupousb/vsim.h` | Fatto, testato |
 | L1 | Driver del chip LVHC (motore delle transazioni, toggle, NAK/retry, scheduling interrupt) | `src/hcd/lvhc/lvhc.c` | Fatto, testato |
 | L1 | Emulazione generica del root hub (riusabile per SL811/MAX3421/CH376) | `src/hcd/rhemul/rhemul.c` | Fatto, testato |
-| L2 | `lupovirt.device`: Exec device con interfaccia `usbhardware.device` | `src/amiga/lupovirt_dev.c` | Compila; **non ancora provato su AmigaOS reale/emulato** |
+| L2 | `lupovirt.device`: Exec device con interfaccia `usbhardware.device` | `src/amiga/lupovirt_dev.c` | Fatto, provato in emulatore (FS-UAE + ROM AROS, vedi §4bis) |
 | L3 | USBD: enumerazione, driver hub unico, binding delle classi | `src/usbd/` | Fatto, testato (host e 68k) |
 | L3 | Backend USBD verso un `usbhardware.device` qualsiasi | `src/amiga/be_amiga.c` | Compila; da provare su AmigaOS |
 | L4 | HID: parser dei report descriptor, decoder, mappa HID→rawkey, class driver | `src/classes/hid/` | Fatto, testato |
@@ -46,20 +46,40 @@ Il tempo è un clock in millisecondi (`os_time_ms()`): sull'host è simulato, qu
 | `make sim && ./build/host/usbsim [-v]` | Simulatore: mostra enumerazione, albero dei dispositivi ed eventi di input decodificati |
 | `make docker-amiga` | Compila i binari Amiga nel container della toolchain (bebbo gcc 16 + NDK 3.2) |
 | `make dist` (nel container) | Crea `build/dist/LupoUsbDriver.lha` |
+| `tests/emu/run.sh [secondi]` | Avvia un A1200 emulato (FS-UAE, ROM AROS) che esegue `lupousbd` su `lupovirt.device` e dà un verdetto PASS/FAIL (§4bis) |
 | `vamos -C 68020 build/amiga/C/lupotest` | Esegue la stessa suite di test **compilata per 68k** sotto vamos (amitools): verifica il big-endian |
 
 Binari Amiga prodotti:
 - `Devs/lupovirt.device`: da copiare in `DEVS:`. L'unità 0 ha i dispositivi fermi; l'unità 1 è in modalità demo, con il mouse virtuale che percorre un quadrato.
-- `C/lupousbd`: `lupousbd [DEVICE=nome.device] [UNIT=n] [VERBOSE] [NOINPUT]`. Ctrl-F stampa l'albero dei dispositivi, Ctrl-C esce. Funziona con qualunque `usbhardware.device`, non solo con `lupovirt.device`.
+- `C/lupousbd`: `lupousbd [DEVICE=nome.device] [UNIT=n] [VERBOSE] [NOINPUT] [TIMEOUT=s] [LOG=file]`. `TIMEOUT` esce dopo n secondi (stampando prima l'albero), `LOG` scrive il log anche su file, con il tempo in ms. Ctrl-F stampa l'albero dei dispositivi, Ctrl-C esce. Funziona con qualunque `usbhardware.device`, non solo con `lupovirt.device`.
 - `C/lupotest`: la suite di test per 68k.
 
 ## 4. CI
 
-`.github/workflows/build.yml` esegue a ogni push quattro job:
+`.github/workflows/build.yml` esegue a ogni push cinque job:
 1. **test sull'host**;
-2. **build Amiga** nel container, fissato per digest, con l'archivio LHA come artifact;
+2. **build Amiga** nel container, fissato per digest, con l'archivio LHA e i binari come artifact;
 3. **test 68k sotto vamos**;
-4. **release**: sui tag `v*` allega l'LHA alla release.
+4. **Amiga emulato** (FS-UAE + ROM AROS): `tests/emu/run.sh`, con i log come artifact `emulator-logs`;
+5. **release**: sui tag `v*` allega l'LHA alla release.
+
+## 4bis. Test in emulatore
+
+`tests/emu/run.sh` prepara una directory usata come hard disk (`build/emu/hd`, con `C/lupousbd`, `C/mousepos`, `Devs/lupovirt.device`) e avvia FS-UAE senza finestra (Xvfb) con la ROM AROS integrata, quindi senza Kickstart protetto da copyright. La Startup-Sequence esegue tre prove:
+
+| Prova | Comando | Controllo |
+|---|---|---|
+| 1-idle | `lupousbd UNIT=0 TIMEOUT=5 NOINPUT` | 5 dispositivi enumerati e legati al driver, chiusura pulita |
+| 2-demo | `lupousbd UNIT=1 TIMEOUT=5 NOINPUT` | come sopra, con il traffico interrupt del mouse demo |
+| 3-input | `lupousbd UNIT=1 TIMEOUT=8` | come sopra, e il puntatore di Intuition (letto da `mousepos` prima e dopo) si è spostato |
+
+La porta seriale emulata va in `build/emu/serial.log` (output di debug del device). L'emulazione è *cycle exact* a velocità reale di un 68020/A1200: FS-UAE senza questi parametri esegue la CPU alla velocità dell'host e nasconde i problemi di prestazioni.
+
+Problemi trovati solo così (corretti):
+- **livelock**: il chip simulato rialzava l'interrupt a ogni accesso finché restavano bit di cambiamento delle porte; il task dell'unità (priorità 5) monopolizzava la CPU e `lupousbd` non avanzava. Ora l'interrupt scatta solo sui bit nuovi (fronte), come su un chip reale;
+- **CPU insufficiente in modalità demo**: l'orologio veniva letto con `GetSysTime()` a ogni accesso ai registri, con tick di 2 ms. Ora c'è un orologio manuale avanzato una volta per ciclo (`virtbus_tick()`), con tick di 5 ms.
+
+Esito (locale e su GitHub): tutte le prove PASS, enumerazione completa in circa 2,4 s di tempo emulato, il mouse USB sposta il puntatore.
 
 Le bozze `Documents/proposals/Makefile.draft` e `build.yml.draft` sono superate da `Makefile` e dal workflow reale.
 
@@ -74,7 +94,7 @@ Le bozze `Documents/proposals/Makefile.draft` e `build.yml.draft` sono superate 
 
 ## 6. Prossimi passi
 
-1. **Provare `lupovirt.device` e `lupousbd` su AmigaOS**, in emulatore con Kickstart 3.x (WinUAE/FS-UAE/Amiberry) o su hardware. È la prima cosa non verificabile in questo ambiente. Per facilitarlo si può aggiungere un test d'integrazione automatico con un emulatore headless, se una ROM è disponibile in modo lecito.
+1. ~~Provare `lupovirt.device` e `lupousbd` su AmigaOS~~: fatto in emulatore con ROM AROS (§4bis). Resta da provare con Kickstart 3.x originale (ROM non distribuibile, quindi a mano) e su hardware.
 2. **Joystick/gamepad**: oggi il decoder funziona ma il sink Amiga si limita a registrare nel log. Va deciso come presentarlo al sistema (patch di `lowlevel.library`, emulazione della porta joystick, API propria).
 3. **Impacchettare L3 come `lupousb.library`** con class driver caricati dinamicamente (registro delle classi in `LIBS:USB/` o `SYS:Classes/USB/`).
 4. **Trasferimenti bulk** già supportati da L1 e L3; poi `msd.class` (mass storage) con un dispositivo di memoria simulato.
