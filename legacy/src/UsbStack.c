@@ -162,15 +162,17 @@ UBYTE InitFunction(UBYTE FunctionSpeed)
   //5: Create default control endpoint
   //6: Obtain Full Device Descriptor
   int i=0;
+  UBYTE MaxPacketSize0=8;
   UBYTE Address=FindFreeAddress();
   PENDPOINT_DESCRIPTOR ed=ControlPipe[0];
   if(FunctionSpeed)    ed=ControlPipe[1];
-  if(GetDescriptor(Support,ed,UsbdRequest,DESCRIPTOR_DEVICE,0,0x08,0))
+  if(GetDescriptor(Support,ed,UsbdRequest,DESCRIPTOR_DEVICE,0,0x08,0)
+     && (MaxPacketSize0=UsbdRequest->USB_Buffer[7]))    // bMaxPacketSize0: byte 7
     if(SetAddress(Support,ed,UsbdRequest,Address))
     {
       EndpointControl0.EC_Speed            =FunctionSpeed;
       EndpointControl0.EC_FunctionAddress  =Address;
-      EndpointControl0.EC_MaximumPacketSize=(UsbdRequest->USB_Buffer[6]<<8)+(UsbdRequest->USB_Buffer[7]&0xFF);
+      EndpointControl0.EC_MaximumPacketSize=MaxPacketSize0;
       UsbDeviceList[Address].USB_DEVICE_ControlPipe=AllocEndpoint(Support,Endpoint_Control,ED_CONTROL,&EndpointControl0);
       if(!(OpenPipe(Support,UsbDeviceList[Address].USB_DEVICE_ControlPipe)))
       {
