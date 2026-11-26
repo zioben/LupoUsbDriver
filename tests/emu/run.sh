@@ -22,9 +22,10 @@ cp "$ROOT/build/amiga/C/lupousbd" "$ROOT/build/amiga/C/mousepos" "$HD/C/"
 
 cat > "$HD/S/Startup-Sequence" <<'EOF'
 C:mousepos before >SYS:emu.log
-C:lupousbd UNIT=1 TIMEOUT=8 LOG=SYS:emu.log
+C:lupousbd UNIT=0 TIMEOUT=5 NOINPUT LOG=SYS:emu-1-idle.log
+C:lupousbd UNIT=1 TIMEOUT=5 NOINPUT LOG=SYS:emu-2-demo.log
+C:lupousbd UNIT=1 TIMEOUT=8 LOG=SYS:emu-3-input.log
 C:mousepos after >>SYS:emu.log
-C:lupousbd UNIT=0 TIMEOUT=3 NOINPUT LOG=SYS:emu.log
 EOF
 
 cat > "$EMU/test.fs-uae" <<EOF
@@ -51,7 +52,10 @@ sleep 1
 HOME=$EMU xvfb-run -a timeout "$SECS" fs-uae "$EMU/test.fs-uae" >"$EMU/fs-uae.out" 2>&1 || true
 
 kill $SOCAT 2>/dev/null || true
-echo "=== emu.log (Amiga side) ==="
-cat "$HD/emu.log" 2>/dev/null || { echo "no log: the test did not run"; tail -20 "$EMU/fs-uae.out"; exit 1; }
-echo "=== serial (device debug output) ==="
-cat "$EMU/serial.log" 2>/dev/null | tr -d '\r' | head -40 || true
+[ -f "$HD/emu.log" ] || { echo "no log: the test did not run"; tail -20 "$EMU/fs-uae.out"; exit 1; }
+for f in "$HD"/emu*.log; do
+    echo "=== $(basename "$f") (Amiga side) ==="
+    cat "$f"
+done
+echo "=== serial (device debug output, after boot) ==="
+tr -d '\r' < "$EMU/serial.log" 2>/dev/null | sed -n '/lupousb/,$p' | head -40 || true
