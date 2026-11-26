@@ -49,8 +49,19 @@ void kill(void)
         HcDeleteDeviceData(HostController);
 		  GfxKillList();
       }
+      else
+      {
+        // the card was never found: free the structures without touching
+        // the hardware, otherwise the public port "Lupo Usb Port" stays
+        // and the next start believes a kernel is already running
+        HcKillHccaArea(HostController);
+        HcKillMessagePort(HostController);
+        HcKillHc(HostController);
+      }
+      HostController=NULL;
     }
  if (PciBase) CloseLibrary((struct Library*)PciBase);
+ PciBase=NULL;
 }
 
 //---------------------------------------
@@ -80,7 +91,13 @@ ULONG main (void)
      SetupGfxMemory(d->BufferMemAddress,d->BufferMemOffset,d->BufferMemSize);
    }
    CreateTDCache();
-   if(HcSetup(HostController)) kill();
+   if(HcSetup(HostController))
+   {
+     // card not found or wrong revision: do not go on with freed structures
+     FreeTDCache();
+     kill();
+     return(0);
+   }
    if(AddMediatorPciInterrupt(HostController))
    {
 	  PHC_REQUEST   mymess=NULL;
