@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 #include <exec/exec.h>
@@ -17,7 +19,7 @@
 #include <hcDriverStructs.h>
 #include <DefaultControlEndpoint.h>
 
-#define  IEQUALIFIERPOS IEQUALIFIER_RELATIVEMOUSE | IEQUALIFIER_MULTIBROADCAST | IEQUALIFIERB_MULTIBROADCAST
+#define  IEQUALIFIERPOS IEQUALIFIER_RELATIVEMOUSE
 #define  FUNCTIONADDRESS 2
 
 //---------------------------------------------------------------------
@@ -73,18 +75,61 @@ struct MsgPort    *Input_MP=NULL; /* port: was initialized with CreatePort befor
 
 //---------------------------------------------------------------------
 
-void MouseTask()
+// Sends one input event to input.device (from the main process: the old
+// MouseTask was an Exec task calling DOS Delay(), replied on a port whose
+// mp_SigTask was the main task, and resent the same event at every tick).
+
+void SendInputEvent(struct InputEvent *ev)
 {
-  while(!TaskEsci)
-  {
-    Delay(1);
+    ev->ie_NextEvent=NULL;
     InputRequest.io_Command=IND_WRITEEVENT;
-    InputRequest.io_Flags  =IOF_QUICK;
+    InputRequest.io_Flags  =0;
     InputRequest.io_Length =sizeof(struct InputEvent);
-    if(!InputLocked) InputRequest.io_Data = &InputEvent2;
-    else				 InputRequest.io_Data = &InputEvent1;
+    InputRequest.io_Data   =ev;
     DoIO((struct IORequest*)&InputRequest);
-  }
+}
+
+UWORD ButtonQualifiers(UBYTE buttons)
+{
+    UWORD q=IEQUALIFIERPOS;
+    if(buttons & 0x01) q|=IEQUALIFIER_LEFTBUTTON;
+    if(buttons & 0x02) q|=IEQUALIFIER_RBUTTON;
+    if(buttons & 0x04) q|=IEQUALIFIER_MIDBUTTON;
+    return(q);
+}
+
+// One RAWMOUSE event for the movement, then one event per button that
+// changed state (IECODE_xBUTTON, with IECODE_UP_PREFIX when released):
+// input.device and Intuition expect exactly one transition per event.
+
+void InjectMouse(UBYTE *oldbuttons, UBYTE buttons, BYTE dx, BYTE dy)
+{
+    static const UWORD code[3]={IECODE_LBUTTON,IECODE_RBUTTON,IECODE_MBUTTON};
+    struct InputEvent ev;
+    int b;
+    if(dx || dy)
+    {
+      memset(&ev,0,sizeof(ev));
+      ev.ie_Class=IECLASS_RAWMOUSE;
+      ev.ie_Code=IECODE_NOBUTTON;
+      ev.ie_Qualifier=ButtonQualifiers(*oldbuttons);
+      ev.ie_position.ie_xy.ie_x=dx;
+      ev.ie_position.ie_xy.ie_y=dy;
+      SendInputEvent(&ev);
+    }
+    for(b=0;b<3;b++)
+    {
+      UBYTE bit=1<<b;
+      if((buttons ^ *oldbuttons) & bit)
+      {
+        *oldbuttons^=bit;
+        memset(&ev,0,sizeof(ev));
+        ev.ie_Class=IECLASS_RAWMOUSE;
+        ev.ie_Code=code[b] | ((buttons & bit) ? 0 : IECODE_UP_PREFIX);
+        ev.ie_Qualifier=ButtonQualifiers(*oldbuttons);
+        SendInputEvent(&ev);
+      }
+    }
 }
 
 
@@ -162,10 +207,9 @@ void ClearMouse(UBYTE FunctionNumber)
 
 void TestMouse(UBYTE FunctionNumber)
 {
- struct InputEvent *MouseEvent;
  int i;
  int j=0;
- struct Task *MyTask=NULL;
+ UBYTE buttons=0;
 
  char str[4]={0x0d,0x0a,0x0c,0};
  PENDPOINT_DESCRIPTOR ed=AllocEndpoint(Support,Endpoint_Interrupt,ED_INTERRUPT_16ms,&cont);
@@ -187,34 +231,20 @@ void TestMouse(UBYTE FunctionNumber)
     USB_Req->USB_BufferLength=0;
     SendUsbData(Support,UsbMouse->USB_DEVICE_ControlPipe,USB_Req);
     printf("\nResult: %#X\n",USB_Req->USB_Status);
-    MyTask=CreateTask("USB MOUSE TASK",0,MouseTask,4096);
-    for(i=0;i<200;i++)
+    printf("USB mouse at address %d: Ctrl-C to quit\n",FunctionNumber);
+    while(!(SetSignal(0,0) & SIGBREAKF_CTRL_C))
     {
-      printf("%d\n",i);
       USB_Req->USB_BufferLength=8;
       USB_Req->USB_ShortXferOk=1;
-      ReceiveUsbData(Support,ed,USB_Req);
-
-      // convert usb mouse data in a choerent InputEvnt
-
-      if(InputLocked==0) MouseEvent=&InputEvent1;
-      else               MouseEvent=&InputEvent2;
-	   InputLocked=!InputLocked;
-
-      MouseEvent->ie_Qualifier=IEQUALIFIERPOS;
-
-		MouseEvent->ie_Code=0;
-      if(  USB_Req->USB_Buffer[0] & 0x01)  MouseEvent->ie_Code |= IECODE_LBUTTON;
-      if(  USB_Req->USB_Buffer[0] & 0x02)  MouseEvent->ie_Code |= IECODE_RBUTTON;
-      if(  USB_Req->USB_Buffer[0] & 0x04)  MouseEvent->ie_Code |= IECODE_MBUTTON;
-      if(!(USB_Req->USB_Buffer[0] & 0x07)) MouseEvent->ie_Code  = IECODE_NOBUTTON;
-
-      MouseEvent->ie_Qualifier=IEQUALIFIERPOS | IEQUALIFIER_RELATIVEMOUSE;
-      MouseEvent->ie_position.ie_xy.ie_x=((WORD)USB_Req->USB_Buffer[1]);
-      MouseEvent->ie_position.ie_xy.ie_y=((WORD)USB_Req->USB_Buffer[2]);
+      if(!ReceiveUsbData(Support,ed,USB_Req)) continue;   // no new report
+      // boot protocol report: buttons, X, Y (signed bytes)
+      InjectMouse(&buttons,USB_Req->USB_Buffer[0]&0x07,
+                  (BYTE)USB_Req->USB_Buffer[1],(BYTE)USB_Req->USB_Buffer[2]);
     }
-   FreeEndpoint(Support,ed);
+    SetSignal(0,SIGBREAKF_CTRL_C);
+    InjectMouse(&buttons,0,0,0);      // release buttons still pressed
    }
+   FreeEndpoint(Support,ed);
  }
 }
 
@@ -271,8 +301,12 @@ void TestForceFeedback(UBYTE FunctionNumber)
 
 //---------------------------------------------------------------------
 
-void main(void)
+int main(int argc,char **argv)
 {
+ // the USB address of the mouse (the stack prints it when the device is
+ // added); before it was hard coded to 2
+ UBYTE address=FUNCTIONADDRESS;
+ if(argc>1) address=(UBYTE)atoi(argv[1]);
  /* port: global initializers of the StormC (C++) build */
  UsbLibrary=OpenLibrary("lupousb.library",0L);
  Input_MP=CreatePort(NULL,0);
@@ -281,14 +315,18 @@ void main(void)
  {
    if(!OpenDevice("input.device",0L,(struct IORequest *) &InputRequest,0L))
    {
-     if(SetupMouse(FUNCTIONADDRESS))
+     if(SetupMouse(address))
      {
-      TestMouse(FUNCTIONADDRESS);
-//      TestForceFeedback(FUNCTIONADDRESS);
-      ClearMouse(FUNCTIONADDRESS);
+      // interrupt endpoint of this device: address and speed of the device
+      cont.EC_FunctionAddress=address;
+      cont.EC_Speed=UsbMouse->USB_DEVICE_ControlPipe->ED_Control.EC_Speed;
+      TestMouse(address);
+//      TestForceFeedback(address);
+      ClearMouse(address);
      }
      CloseDevice((struct IORequest*)&InputRequest);
    }
  }
  CloseAll();
+ return(0);
 }
