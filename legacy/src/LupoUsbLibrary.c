@@ -1050,7 +1050,7 @@ PUSB_DEVICE_DESCRIPTOR __saveds GetDeviceDescriptor(PUSB_SUPPORT req __asm("a0")
     ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdUSB       =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdUSB);
     ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idVendor     =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idVendor);
     ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idProduct    =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->idProduct);
-    ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->iSerialNumber=SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->iSerialNumber);
+    ((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdDevice    =SwapWord(((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved)->bcdDevice);
     return((PUSB_DEVICE_DESCRIPTOR)usb->USB_Reserved);
   }
   return(NULL);
