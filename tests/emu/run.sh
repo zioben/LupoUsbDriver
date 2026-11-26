@@ -41,6 +41,9 @@ fullscreen = 0
 automatic_input_grab = 0
 initial_input_grab = 0
 video_sync = 0
+accuracy = 1
+uae_cpu_speed = real
+uae_cpu_cycle_exact = true
 serial_port = $EMU/ttyAmiga
 log_autoscale = 0
 EOF
@@ -78,8 +81,8 @@ fail=0
 check() { if eval "$2"; then echo "PASS: $1"; else echo "FAIL: $1"; fail=1; fi; }
 for run in 1-idle 2-demo 3-input; do
     f="$HD/emu-$run.log"
-    check "$run: 5 devices enumerated and bound" \
-        "[ \$(grep -c 'bound to' '$f' 2>/dev/null) -eq 5 ]"
+    n=$(grep -c 'bound to' "$f" 2>/dev/null || true)
+    check "$run: 5 devices enumerated and bound (found ${n:-0})" "[ '${n:-0}' -eq 5 ]"
     check "$run: clean shutdown" "grep -q 'device addr 1 removed' '$f' 2>/dev/null"
 done
 before=$(sed -n 's/^mousepos before: //p' "$HD/emu.log")
