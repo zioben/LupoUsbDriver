@@ -224,7 +224,9 @@ char ProcessInterrupt(PHCD_DEVICE_DATA devicedata __asm("a1"))
     // LASTTD->Coda della lista
     i=devicedata->HCCA->HccaDoneHead;
     devicedata->HCCA->HccaDoneHead=0;
-    LASTTD=TMPTD=TD=(PTRANSFER_DESCRIPTOR)ConvertLong(i);
+    // bit 0 of HccaDoneHead says that other interrupts are pending (OHCI 4.4.2.3):
+    // it is not part of the TD address (TDs are 16 byte aligned)
+    LASTTD=TMPTD=TD=(PTRANSFER_DESCRIPTOR)(ConvertLong(i) & 0xFFFFFFF0);
     if(TD)
     {
       while((TMPTD=Get_TD_NextTD(TMPTD))) LASTTD=TMPTD;
