@@ -5,9 +5,11 @@
 #   make amiga         AmigaOS binaries (needs m68k-amigaos-gcc in PATH)
 #   make docker-amiga  same as 'amiga', inside the toolchain container
 #   make dist          LHA archive of the Amiga binaries
+#   make legacy        the original 2001-2003 code (legacy/), in the container;
+#                      needs the SDK with pci.library headers in third_party/sdk
 #   make clean
 #
-# The legacy 2001-2003 sources in Sources/ are not built by this Makefile.
+# Sources/ keeps the untouched 2001-2003 originals; legacy/ is their gcc port.
 
 HOST_CC   ?= cc
 AMIGA_CC  ?= m68k-amigaos-gcc
@@ -33,7 +35,7 @@ AMIGA_CFLAGS := -m68020 -Os -fomit-frame-pointer -Wall -Wextra -Werror -Iinclude
 # Devices/libraries: no C library, no startup code, first function = entry point
 AMIGA_MODULE := -nostartfiles -nostdlib -fno-toplevel-reorder -fno-builtin
 
-.PHONY: all test sim amiga abi-check docker-amiga dist clean
+.PHONY: all test sim amiga abi-check docker-amiga dist legacy clean
 
 all: test
 
@@ -83,6 +85,9 @@ amiga: abi-check $(BA)/Devs/lupovirt.device $(BA)/C/lupousbd $(BA)/C/lupotest
 
 docker-amiga:
 	docker run --rm -v "$(CURDIR)":/work -w /work $(TOOLCHAIN_IMAGE) make amiga
+
+legacy:
+	docker run --rm -v "$(CURDIR)":/work -w /work $(TOOLCHAIN_IMAGE) make -f legacy/Makefile
 
 dist: amiga
 	@mkdir -p $(B)/dist
