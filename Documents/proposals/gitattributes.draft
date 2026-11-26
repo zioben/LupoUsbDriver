@@ -1,0 +1,25 @@
+# BOZZA - .gitattributes proposto (vedi Documents/ProjectReview.md §3.3)
+# Testo sempre LF (fine riga nativo AmigaOS), UTF-8 nel nuovo albero.
+* text=auto eol=lf
+
+*.c    text eol=lf
+*.h    text eol=lf
+*.asm  text eol=lf
+*.s    text eol=lf
+*.i    text eol=lf
+*.sfd  text eol=lf
+*.fd   text eol=lf
+*.md   text eol=lf
+Makefile text eol=lf
+*.mk   text eol=lf
+
+# Binari Amiga
+*.info binary
+*.o    binary
+*.lha  binary
+*.lzx  binary
+*.adf  binary
+*.hdf  binary
+
+# Lo snapshot storico resta byte per byte (Latin-1, file progetto StormC)
+/legacy/** -text -diff

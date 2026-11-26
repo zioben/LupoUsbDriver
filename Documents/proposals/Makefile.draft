@@ -1,0 +1,116 @@
+# BOZZA - Makefile proposto per LupoUsbDriver (vedi Documents/ProjectReview.md §3.5)
+# Non funzionante finché non esiste il nuovo albero src/ include/ sfd/.
+#
+#   make                    # TOOLCHAIN=gcc (bebbo m68k-amigaos-gcc)
+#   make TOOLCHAIN=vbcc     # vbcc + vasm + vlink (anche nativo su Amiga)
+#   make test               # test unitari sull'host (gcc nativo)
+#   make dist               # archivio LHA installabile
+
+TOOLCHAIN ?= gcc
+NDK       ?= /opt/amiga/ndk3.2
+BUILD     := build/$(TOOLCHAIN)
+
+include mk/toolchain-$(TOOLCHAIN).mk
+# mk/toolchain-gcc.mk definisce, per esempio:
+#   CC      = m68k-amigaos-gcc
+#   AS      = vasmm68k_mot
+#   CFLAGS  = -m68020 -msoft-float -Os -fomit-frame-pointer -noixemul \
+#             -Wall -Wextra -Werror=implicit-function-declaration \
+#             -Iinclude -Iinclude/sdi -I$(BUILD)/include -isystem $(NDK)/Include_H
+#   ASFLAGS = -Fhunk -devpac -m68020 -quiet -I$(NDK)/Include_I
+#   LDFLAGS_MODULE = -nostartfiles -nostdlib     # library/device/class
+#   LDFLAGS_TOOL   = -noixemul
+#   LIBS_MODULE    = -lamiga -ldebug
+# mk/toolchain-vbcc.mk: CC = vc +aos68k -c99 -cpu=68020 ..., LD = vlink
+
+# ---------------------------------------------------------------------------
+# Header generati dagli .sfd
+SFDS      := $(wildcard sfd/*.sfd)
+GEN_HDRS  := $(patsubst sfd/%_lib.sfd,$(BUILD)/include/proto/%.h,$(SFDS))
+
+$(BUILD)/include/proto/%.h: sfd/%_lib.sfd
+	@mkdir -p $(BUILD)/include/proto $(BUILD)/include/clib $(BUILD)/include/inline
+	sfdc --mode=proto  --output=$@                                $<
+	sfdc --mode=clib   --output=$(BUILD)/include/clib/$*_protos.h $<
+	sfdc --mode=macros --output=$(BUILD)/include/inline/$*.h      $<
+
+headers: $(GEN_HDRS)
+
+# ---------------------------------------------------------------------------
+# Moduli
+COMMON_SRC := $(wildcard src/common/*.c)
+BUS_SRC    := src/bus/pcmcia_gayle.c          # L0: primo backend (A1200 PCMCIA)
+PCI_SRC    := src/bus/pci_mediator.c          # L0: backend PCI opzionale (legacy OHCI)
+
+ISP_SRC    := src/hcd/devskel/devskel.c $(wildcard src/hcd/isp116x/*.c) $(BUS_SRC) $(COMMON_SRC)
+OHCI_SRC   := src/hcd/devskel/devskel.c $(wildcard src/hcd/ohci/*.c) $(PCI_SRC) $(COMMON_SRC)
+VIRT_SRC   := src/hcd/devskel/devskel.c $(wildcard src/hcd/virt/*.c) $(COMMON_SRC)
+USBD_SRC   := $(wildcard src/usbd/*.c) $(COMMON_SRC)
+HID_SRC    := $(wildcard src/classes/hid/*.c) $(COMMON_SRC)
+
+obj = $(patsubst %.c,$(BUILD)/obj/%.o,$(filter %.c,$(1))) \
+      $(patsubst %.asm,$(BUILD)/obj/%.o,$(filter %.asm,$(1)))
+
+MODULES := $(BUILD)/Devs/USBHardware/lupoisp116x.device \
+           $(BUILD)/Devs/USBHardware/lupovirt.device \
+           $(BUILD)/Libs/lupousb.library \
+           $(BUILD)/Classes/USB/hid.class
+
+TOOLS   := $(BUILD)/C/cisdump $(BUILD)/C/usbinfo $(BUILD)/C/USBShowRegs $(BUILD)/Prefs/LupoUsbPrefs
+
+all: headers $(MODULES) $(TOOLS)
+
+$(BUILD)/Devs/USBHardware/lupoisp116x.device: $(call obj,$(ISP_SRC))
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(LDFLAGS_MODULE) -o $@ $^ $(LIBS_MODULE)
+
+# opzionale: make WITH_PCI=1 (richiede SDK pci.library in third_party/)
+$(BUILD)/Devs/USBHardware/lupoohci.device: $(call obj,$(OHCI_SRC))
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(LDFLAGS_MODULE) -o $@ $^ $(LIBS_MODULE)
+
+$(BUILD)/Devs/USBHardware/lupovirt.device: $(call obj,$(VIRT_SRC))
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(LDFLAGS_MODULE) -o $@ $^ $(LIBS_MODULE)
+
+$(BUILD)/Libs/lupousb.library: $(call obj,$(USBD_SRC))
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(LDFLAGS_MODULE) -o $@ $^ $(LIBS_MODULE)
+
+$(BUILD)/Classes/USB/hid.class: $(call obj,$(HID_SRC))
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(LDFLAGS_MODULE) -o $@ $^ $(LIBS_MODULE)
+
+$(BUILD)/C/%: $(BUILD)/obj/tools/%/main.o
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(LDFLAGS_TOOL) -o $@ $^
+
+$(BUILD)/obj/%.o: %.c | headers
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -MMD -MP -c -o $@ $<
+
+$(BUILD)/obj/%.o: %.asm
+	@mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) -o $@ $<
+
+-include $(shell find $(BUILD)/obj -name '*.d' 2>/dev/null)
+
+# ---------------------------------------------------------------------------
+# Test unitari sull'host: solo codice portabile (parser descrittori/HID, schedulatore con registri finti)
+HOSTCC     ?= cc
+TEST_SRC   := $(wildcard tests/host/*.c) src/usbd/descriptors.c src/classes/hid/hidparse.c
+test:
+	@mkdir -p build/host
+	$(HOSTCC) -std=c99 -Wall -Wextra -g -fsanitize=address,undefined \
+	    -Iinclude -Itests/host/amiga_stubs -o build/host/tests $(TEST_SRC)
+	./build/host/tests
+
+# ---------------------------------------------------------------------------
+dist: all
+	@mkdir -p dist/out
+	cd $(BUILD) && lha -aq2 ../../dist/out/LupoUsb.lha Devs Libs Classes C Prefs
+
+clean:
+	rm -rf build dist/out
+
+.PHONY: all headers test dist clean

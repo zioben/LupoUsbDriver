@@ -1,0 +1,43 @@
+# BOZZA - .gitignore proposto per LupoUsbDriver (vedi Documents/ProjectReview.md §3.4)
+# Da copiare in /.gitignore dopo la fase F0.
+
+# Output di build
+/build/
+/dist/out/
+*.o
+*.obj
+*.a
+*.lib
+*.debug
+*.lnk
+*.link
+*.map
+*.lha
+*.lzx
+
+# Eseguibili e moduli Amiga prodotti dalla build (nel nuovo albero escono solo in build/)
+*.library
+*.device
+*.class
+
+# Output assembly generati dal compilatore (StormC, gcc -S)
+/src/**/*.s
+
+# Dipendenze esterne non ridistribuibili (popolate da script)
+/third_party/
+
+# Metadati di emulatori / filesystem
+_UAEFSDB.___
+*.uaem
+.DS_Store
+Thumbs.db
+
+# Icone Workbench dei sorgenti (quelle dei prodotti stanno in dist/icons/ e sono escluse sotto)
+*.info
+!/dist/icons/*.info
+
+# Editor
+*~
+*.swp
+.vscode/
+.idea/
